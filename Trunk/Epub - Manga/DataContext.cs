@@ -29,6 +29,8 @@ namespace EpubManga
         private StringBuilder builderChapter2;
 
         private string compilePath;
+        private string oebpsFolderPath;
+        private string imagesFolderPath;
 
         private BackgroundWorker worker;
 
@@ -47,7 +49,6 @@ namespace EpubManga
             {
                 Data.OutputFolder += "My Books\\";
             }
-            Data.PropertyChanged += Data_PropertyChanged;
 
             IsBusy = false;
             InitializeCommands();
@@ -68,17 +69,6 @@ namespace EpubManga
                     new float[] {0, 0, 0, 1, 0},
                     new float[] {0, 0, 0, 0, 1}
                 }));
-        }
-
-        private void Data_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e == UserInput.grayscaleChangedArgs)
-            {
-                if (!Data.Grayscale)
-                {
-                    Data.Trimming = false;
-                }
-            }
         }
 
         #endregion
@@ -262,9 +252,6 @@ namespace EpubManga
 
 
 
-            string oebpsFolderPath = compilePath + "OEBPS\\";
-            string imagesFolderPath = oebpsFolderPath + "Images\\";
-
             int imageIndex = 1;
 
             foreach (string path in Data.Files)
@@ -273,38 +260,51 @@ namespace EpubManga
                 {
                     if (from.Width > from.Height)
                     {
-                        int firstStart;
-                        int secondStart;
-
-                        switch (Data.DoublePage)
+                        if (Data.DoublePage == DoublePage.RotateLeft)
                         {
-                            case DoublePage.LeftPageFirst:
-                                firstStart = 0;
-                                secondStart = from.Width / 2;
-                                break;
-                            case DoublePage.RightPageFirst:
-                                firstStart = from.Width / 2;
-                                secondStart = 0;
-                                break;
-                            default:
-                                firstStart = 0;
-                                secondStart = 0;
-                                break;
+                            from.RotateFlip(RotateFlipType.Rotate270FlipNone);
+                            SaveImage(from, ref imageIndex, path);
                         }
-
-                        using (Bitmap image = from.Clone(new RectangleF(firstStart, 0, from.Width / 2, from.Height), from.PixelFormat))
+                        else if (Data.DoublePage == DoublePage.RotateRight)
                         {
-                            SaveImage(image, imagesFolderPath, ref imageIndex, oebpsFolderPath, path);
+                            from.RotateFlip(RotateFlipType.Rotate90FlipNone);
+                            SaveImage(from, ref imageIndex, path);
                         }
-
-                        using (Bitmap image = from.Clone(new RectangleF(secondStart, 0, from.Width / 2, from.Height), from.PixelFormat))
+                        else
                         {
-                            SaveImage(image, imagesFolderPath, ref imageIndex, oebpsFolderPath, path);
+                            int firstStart;
+                            int secondStart;
+
+                            switch (Data.DoublePage)
+                            {
+                                case DoublePage.LeftPageFirst:
+                                    firstStart = 0;
+                                    secondStart = from.Width / 2;
+                                    break;
+                                case DoublePage.RightPageFirst:
+                                    firstStart = from.Width / 2;
+                                    secondStart = 0;
+                                    break;
+                                default:
+                                    firstStart = 0;
+                                    secondStart = 0;
+                                    break;
+                            }
+
+                            using (Bitmap image = from.Clone(new RectangleF(firstStart, 0, from.Width / 2, from.Height), from.PixelFormat))
+                            {
+                                SaveImage(image, ref imageIndex, path);
+                            }
+
+                            using (Bitmap image = from.Clone(new RectangleF(secondStart, 0, from.Width / 2, from.Height), from.PixelFormat))
+                            {
+                                SaveImage(image, ref imageIndex, path);
+                            }
                         }
                     }
                     else
                     {
-                        SaveImage(from, imagesFolderPath, ref imageIndex, oebpsFolderPath, path);
+                        SaveImage(from, ref imageIndex, path);
                     }
                 }
 
@@ -352,6 +352,8 @@ namespace EpubManga
         private void InitializeWorkspace()
         {
             compilePath = Data.OutputFolder + Guid.NewGuid().ToString().Replace("{", "").Replace("}", "") + "\\";
+            oebpsFolderPath = compilePath + "OEBPS\\";
+            imagesFolderPath = oebpsFolderPath + "Images\\";
             errors = new List<string>();
 
             Directory.CreateDirectory(compilePath + "META-INF");
@@ -442,7 +444,22 @@ namespace EpubManga
             builderChapter2.AppendLine("</html>");
         }
 
-        private void SaveImage(Bitmap imageOriginal, string imagesFolderPath, ref int imageIndex, string oebpsFolderPath, string imagePath)
+        private void Cleanup()
+        {
+            using (ZipFile zip = new ZipFile())
+            {
+                zip.AddDirectory(compilePath);
+                zip.Save(Data.OutputFolder + Data.OutputFile);
+            }
+
+            Directory.Delete(compilePath, true);
+        }
+
+        #endregion
+
+        #region Image Treatment
+
+        private void SaveImage(Bitmap imageOriginal, ref int imageIndex, string imagePath)
         {
             int width = (Int32)Math.Round((double)(Data.Height * imageOriginal.Width / imageOriginal.Height), 0, MidpointRounding.AwayFromZero);
             int theoreticalWidth = (Int32)Math.Round((double)(Data.Height * 0.75), 0, MidpointRounding.AwayFromZero);
@@ -453,128 +470,22 @@ namespace EpubManga
                 return;
             }
 
-            if (Data.Grayscale)
+            using (Bitmap grayedImage = GrayImage(imageOriginal, Data.Grayscale))
             {
-                using (Bitmap grayedImage = new Bitmap(imageOriginal.Width, imageOriginal.Height))
+                using (Bitmap trimmedImage = TrimImage(grayedImage, Data.Trimming, Data.Grayscale))
                 {
-                    using (Graphics g = Graphics.FromImage(grayedImage))
-                    {
-                        g.DrawImage(imageOriginal, new Rectangle(0, 0, imageOriginal.Width, imageOriginal.Height), 0, 0, imageOriginal.Width, imageOriginal.Height, GraphicsUnit.Pixel, imageAttributes);
-                    }
-
                     using (Bitmap completedImage = new Bitmap(theoreticalWidth, Data.Height))
                     {
-                        if (Data.Trimming)
+                        using (Graphics g = Graphics.FromImage((System.Drawing.Image)completedImage))
                         {
-                            #region Trimming
+                            width = (Int32)Math.Round((double)(Data.Height * trimmedImage.Width / trimmedImage.Height), 0, MidpointRounding.AwayFromZero);
 
-                            int startX = -2;
-                            int startY = -2;
-                            int endX = -2;
-                            int endY = -2;
-
-                            for (int i = 0; i < grayedImage.Width; i++)
-                            {
-                                for (int j = 0; j < grayedImage.Height; j++)
-                                {
-                                    Color orgColor = grayedImage.GetPixel(i, j);
-                                    if ((orgColor.R < Data.TrimmingValue) || (orgColor.G < Data.TrimmingValue) || (orgColor.B < Data.TrimmingValue))
-                                    {
-                                        startX = i - 1;
-                                        break;
-                                    }
-                                }
-
-                                if (startX != -2) break;
-                            }
-
-                            for (int j = 0; j < grayedImage.Height; j++)
-                            {
-                                for (int i = 0; i < grayedImage.Width; i++)
-                                {
-                                    Color orgColor = grayedImage.GetPixel(i, j);
-                                    if ((orgColor.R < Data.TrimmingValue) || (orgColor.G < Data.TrimmingValue) || (orgColor.B < Data.TrimmingValue))
-                                    {
-                                        startY = j - 1;
-                                        break;
-                                    }
-                                }
-
-                                if (startY != -2) break;
-                            }
-
-                            for (int i = grayedImage.Width - 1; i >= 0; i--)
-                            {
-                                for (int j = 0; j < grayedImage.Height; j++)
-                                {
-                                    Color orgColor = grayedImage.GetPixel(i, j);
-                                    if ((orgColor.R < Data.TrimmingValue) || (orgColor.G < Data.TrimmingValue) || (orgColor.B < Data.TrimmingValue))
-                                    {
-                                        endX = i + 1;
-                                        break;
-                                    }
-                                }
-
-                                if (endX != -2) break;
-                            }
-
-                            for (int j = grayedImage.Height - 1; j >= 0; j--)
-                            {
-                                for (int i = 0; i < grayedImage.Width; i++)
-                                {
-                                    Color orgColor = grayedImage.GetPixel(i, j);
-                                    if ((orgColor.R < Data.TrimmingValue) || (orgColor.G < Data.TrimmingValue) || (orgColor.B < Data.TrimmingValue))
-                                    {
-                                        endY = j + 1;
-                                        break;
-                                    }
-                                }
-
-                                if (endY != -2) break;
-                            }
-
-                            if (startX < 0) startX = 0;
-                            if (startY < 0) startY = 0;
-                            if (endX < 0) endX = 0;
-                            if (endY < 0) endY = 0;
-
-                            #endregion
-
-                            using (Bitmap trimmedImage = grayedImage.Clone(new RectangleF(startX, startY, endX - startX, endY - startY), grayedImage.PixelFormat))
-                            {
-                                using (Graphics g = Graphics.FromImage((System.Drawing.Image)completedImage))
-                                {
-                                    width = (Int32)Math.Round((double)(Data.Height * trimmedImage.Width / trimmedImage.Height), 0, MidpointRounding.AwayFromZero);
-
-                                    g.FillRectangle(new SolidBrush(Color.White), 0, 0, theoreticalWidth, Data.Height);
-                                    g.DrawImage(trimmedImage, (float)((theoreticalWidth - width) * 0.55), 0, width, Data.Height);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            using (Graphics g = Graphics.FromImage((System.Drawing.Image)completedImage))
-                            {
-                                g.FillRectangle(new SolidBrush(Color.White), 0, 0, theoreticalWidth, Data.Height);
-                                g.DrawImage(grayedImage, (float)((theoreticalWidth - width) * 0.55), 0, width, Data.Height);
-                            }
+                            g.FillRectangle(new SolidBrush(Color.White), 0, 0, theoreticalWidth, Data.Height);
+                            g.DrawImage(trimmedImage, (float)((theoreticalWidth - width) * 0.65), 0, width, Data.Height);
                         }
 
                         completedImage.Save(imagesFolderPath + "I" + imageIndex.ToString() + ".jpg", codec, parameters);
                     }
-                }
-            }
-            else
-            {
-                using (Bitmap completedImage = new Bitmap(theoreticalWidth, Data.Height))
-                {
-                    using (Graphics g = Graphics.FromImage((System.Drawing.Image)completedImage))
-                    {
-                        g.FillRectangle(new SolidBrush(Color.White), 0, 0, theoreticalWidth, Data.Height);
-                        g.DrawImage(imageOriginal, (float)((theoreticalWidth - width) * 0.55), 0, width, Data.Height);
-                    }
-
-                    completedImage.Save(imagesFolderPath + "I" + imageIndex.ToString() + ".jpg", codec, parameters);
                 }
             }
 
@@ -584,7 +495,7 @@ namespace EpubManga
 
             StringBuilder chapter = new StringBuilder();
             chapter.Append(builderChapter1.ToString());
-            chapter.AppendLine("\t\t<img src=\"Images/I" + imageIndex.ToString() + ".jpg\" />");
+            chapter.AppendLine("\t\t<img style=\"margin:0\" src=\"Images/I" + imageIndex.ToString() + ".jpg\" />");
             chapter.Append(builderChapter2.ToString());
 
             StreamWriter chapterWriter = new StreamWriter(oebpsFolderPath + "P" + imageIndex.ToString() + ".xml", false);
@@ -594,15 +505,106 @@ namespace EpubManga
             imageIndex++;
         }
 
-        private void Cleanup()
+        private Bitmap GrayImage(Bitmap originalImage, bool toGrayscale)
         {
-            using (ZipFile zip = new ZipFile())
+            if (toGrayscale)
             {
-                zip.AddDirectory(compilePath);
-                zip.Save(Data.OutputFolder + Data.OutputFile);
+                Bitmap grayedImage = new Bitmap(originalImage.Width, originalImage.Height);
+                using (Graphics g = Graphics.FromImage(grayedImage))
+                {
+                    g.DrawImage(originalImage, new Rectangle(0, 0, originalImage.Width, originalImage.Height), 0, 0, originalImage.Width, originalImage.Height, GraphicsUnit.Pixel, imageAttributes);
+                }
+                return grayedImage;
             }
+            else
+            {
+                return originalImage;
+            }
+        }
 
-            Directory.Delete(compilePath, true);
+        private Bitmap TrimImage(Bitmap originalImage, bool toTrim, bool isGrayed)
+        {
+            if (toTrim)
+            {
+                using (Bitmap grayedImage = GrayImage(originalImage, !isGrayed))
+                {
+                    int startX = -2;
+                    int startY = -2;
+                    int endX = -2;
+                    int endY = -2;
+
+                    for (int i = 0; i < grayedImage.Width; i++)
+                    {
+                        for (int j = 0; j < grayedImage.Height; j++)
+                        {
+                            Color orgColor = grayedImage.GetPixel(i, j);
+                            if ((orgColor.R < Data.TrimmingValue) || (orgColor.G < Data.TrimmingValue) || (orgColor.B < Data.TrimmingValue))
+                            {
+                                startX = i - 1;
+                                break;
+                            }
+                        }
+
+                        if (startX != -2) break;
+                    }
+
+                    for (int j = 0; j < grayedImage.Height; j++)
+                    {
+                        for (int i = 0; i < grayedImage.Width; i++)
+                        {
+                            Color orgColor = grayedImage.GetPixel(i, j);
+                            if ((orgColor.R < Data.TrimmingValue) || (orgColor.G < Data.TrimmingValue) || (orgColor.B < Data.TrimmingValue))
+                            {
+                                startY = j - 1;
+                                break;
+                            }
+                        }
+
+                        if (startY != -2) break;
+                    }
+
+                    for (int i = grayedImage.Width - 1; i >= 0; i--)
+                    {
+                        for (int j = 0; j < grayedImage.Height; j++)
+                        {
+                            Color orgColor = grayedImage.GetPixel(i, j);
+                            if ((orgColor.R < Data.TrimmingValue) || (orgColor.G < Data.TrimmingValue) || (orgColor.B < Data.TrimmingValue))
+                            {
+                                endX = i + 1;
+                                break;
+                            }
+                        }
+
+                        if (endX != -2) break;
+                    }
+
+                    for (int j = grayedImage.Height - 1; j >= 0; j--)
+                    {
+                        for (int i = 0; i < grayedImage.Width; i++)
+                        {
+                            Color orgColor = grayedImage.GetPixel(i, j);
+                            if ((orgColor.R < Data.TrimmingValue) || (orgColor.G < Data.TrimmingValue) || (orgColor.B < Data.TrimmingValue))
+                            {
+                                endY = j + 1;
+                                break;
+                            }
+                        }
+
+                        if (endY != -2) break;
+                    }
+
+                    if (startX < 0) startX = 0;
+                    if (startY < 0) startY = 0;
+                    if (endX < 0) endX = 0;
+                    if (endY < 0) endY = 0;
+
+                    return originalImage.Clone(new RectangleF(startX, startY, endX - startX, endY - startY), originalImage.PixelFormat);
+                }
+            }
+            else
+            {
+                return originalImage;
+            }
         }
 
         #endregion

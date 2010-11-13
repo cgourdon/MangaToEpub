@@ -70,7 +70,7 @@ namespace EpubManga
         #region Grayscale
 
         private bool grayscale;
-        public static readonly PropertyChangedEventArgs grayscaleChangedArgs = new PropertyChangedEventArgs("Grayscale");
+        private static readonly PropertyChangedEventArgs grayscaleChangedArgs = new PropertyChangedEventArgs("Grayscale");
         public bool Grayscale
         {
             get
