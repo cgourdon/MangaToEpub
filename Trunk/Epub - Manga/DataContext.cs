@@ -16,6 +16,8 @@ namespace EpubManga
     {
         #region Data
 
+        private List<string> allowedFileExtensions;
+
         private EncoderParameters parameters;
         private ImageCodecInfo codec;
         private ImageAttributes imageAttributes;
@@ -69,6 +71,17 @@ namespace EpubManga
                     new float[] {0, 0, 0, 1, 0},
                     new float[] {0, 0, 0, 0, 1}
                 }));
+
+            allowedFileExtensions = new List<string>();
+            var decoders = ImageCodecInfo.GetImageDecoders();
+            foreach (var decoder in decoders)
+            {
+                var extensions = decoder.FilenameExtension.Split(';');
+                foreach (var extension in extensions)
+                {
+                    allowedFileExtensions.Add(extension.Trim('*').ToLower());
+                }
+            }
         }
 
         #endregion
@@ -143,6 +156,7 @@ namespace EpubManga
 
         public Command GenerateCommand { get; private set; }
         public Command SelectFilesCommand { get; private set; }
+        public Command SelectInputFolderCommand { get; private set; }
         public Command SelectOutputFolderCommand { get; private set; }
 
         private void InitializeCommands()
@@ -157,6 +171,12 @@ namespace EpubManga
             {
                 CanExecuteDelegate = (obj) => SelectFilesCommandCanExecute(),
                 ExecuteDelegate = (obj) => SelectFilesCommandExecute()
+            };
+
+            SelectInputFolderCommand = new Command()
+            {
+                CanExecuteDelegate = (obj) => SelectInputFolderCommandCanExecute(),
+                ExecuteDelegate = (obj) => SelectInputFolderCommandExecute()
             };
 
             SelectOutputFolderCommand = new Command()
@@ -211,7 +231,52 @@ namespace EpubManga
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                Data.Files = ofd.FileNames.Where(f => !string.IsNullOrEmpty(f)).ToList();
+                Data.Files = ofd.FileNames.Where(f =>
+                    {
+                        if (string.IsNullOrEmpty(f)) return false;
+
+                        FileInfo file = new FileInfo(f);
+                        if (allowedFileExtensions.Contains(file.Extension.ToLower())) return true;
+
+                        return false;
+                    }).ToList();
+            }
+        }
+
+        #endregion
+
+        #region SelectInputFolderCommand
+
+        private string lastSelectedFolder;
+
+        private bool SelectInputFolderCommandCanExecute()
+        {
+            return !IsBusy;
+        }
+
+        private void SelectInputFolderCommandExecute()
+        {
+            using (FolderBrowserDialog fbd = new FolderBrowserDialog())
+            {
+                fbd.SelectedPath = lastSelectedFolder;
+                fbd.ShowNewFolderButton = false;
+
+                if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    lastSelectedFolder = fbd.SelectedPath;
+                    DirectoryInfo dir = new DirectoryInfo(lastSelectedFolder);
+                    List<FileInfo> files = dir.GetFiles().OrderBy(f => f.Name, new FileNameComparer()).ToList();
+
+                    List<string> paths = new List<string>();
+                    foreach (FileInfo file in files)
+                    {
+                        if (allowedFileExtensions.Contains(file.Extension.ToLower()))
+                        {
+                            paths.Add(file.FullName);
+                        }
+                    }
+                    Data.Files = paths;
+                }
             }
         }
 
