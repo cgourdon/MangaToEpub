@@ -23,6 +23,12 @@
             <Setter Property="Margin" Value="2"/>
             <Setter Property="Padding" Value="2"/>
         </Style>
+        
+        <Style x:Key="ImageButton" BasedOn="{StaticResource {x:Type Button}}" TargetType="{x:Type Button}">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Width" Value="24"/>
+        </Style>
 
         <Style BasedOn="{StaticResource {x:Type ProgressBar}}" TargetType="{x:Type ProgressBar}">
             <Setter Property="Margin" Value="2"/>
@@ -38,7 +44,7 @@
             <Setter Property="Margin" Value="2,8,2,2"/>
             <Setter Property="Padding" Value="2"/>
         </Style>
-
+        
     </Window.Resources>
 
     <Grid>
@@ -65,9 +71,15 @@
         
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Files"/>
         <DockPanel Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3">
-            <Button DockPanel.Dock="Right" Content="..." Width="25"
-                Command="{Binding SelectFilesCommand}" />
-            
+            <Button DockPanel.Dock="Right" Style="{StaticResource ImageButton}" ToolTip="Select Folder"
+                Command="{Binding SelectInputFolderCommand}">
+                    <Image Source="./Images/Folder.png"/>
+            </Button>
+            <Button DockPanel.Dock="Right" Style="{StaticResource ImageButton}" ToolTip="Select Files"
+                Command="{Binding SelectFilesCommand}">
+                <Image Source="./Images/Image.png"/>
+            </Button>
+
             <TextBox DockPanel.Dock="Left" IsReadOnly="True"
                 Text="{Binding Data.Files, Converter={StaticResource ListStringToStringConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
         </DockPanel>
@@ -75,8 +87,10 @@
 
         <TextBlock Grid.Row="1" Grid.Column="0" Text="Output Folder"/>
         <DockPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3">
-            <Button DockPanel.Dock="Right" Content="..." Width="25"
-                Command="{Binding SelectOutputFolderCommand}" />
+            <Button DockPanel.Dock="Right" Style="{StaticResource ImageButton}" ToolTip="Select Folder"
+                Command="{Binding SelectOutputFolderCommand}">
+                    <Image Source="./Images/Folder.png"/>
+            </Button>
 
             <TextBox DockPanel.Dock="Left" IsReadOnly="True"
                 Text="{Binding Data.OutputFolder, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
