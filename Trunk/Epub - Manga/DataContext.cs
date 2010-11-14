@@ -16,7 +16,11 @@ namespace EpubManga
     {
         #region Data
 
-        private List<string> allowedFileExtensions;
+        private List<string> allowedExtensions;
+        private List<string> allowedImageExtensions;
+        private List<string> allowedZipExtensions = new List<string>() { ".zip", ".cbz" };
+
+        private string fileDialogFilter;
 
         private EncoderParameters parameters;
         private ImageCodecInfo codec;
@@ -33,10 +37,14 @@ namespace EpubManga
         private string compilePath;
         private string oebpsFolderPath;
         private string imagesFolderPath;
+        private List<string> tempDirectories = new List<string>();
 
         private BackgroundWorker worker;
 
-        private List<string> errors;
+        private List<string> pathErrors;
+        private List<string> zipErrors;
+        private List<string> imageErrors;
+        private List<string> ratioErrors;
 
         #endregion
 
@@ -52,12 +60,15 @@ namespace EpubManga
                 Data.OutputFolder += "My Books\\";
             }
 
+
             IsBusy = false;
             InitializeCommands();
+
 
             worker = new BackgroundWorker();
             worker.DoWork += worker_DoWork;
             worker.RunWorkerCompleted += worker_RunWorkerCompleted;
+
 
             parameters = new EncoderParameters(1);
             parameters.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Compression, 1);
@@ -72,15 +83,49 @@ namespace EpubManga
                     new float[] {0, 0, 0, 0, 1}
                 }));
 
-            allowedFileExtensions = new List<string>();
+
+
+            allowedImageExtensions = new List<string>();
             var decoders = ImageCodecInfo.GetImageDecoders();
             foreach (var decoder in decoders)
             {
                 var extensions = decoder.FilenameExtension.Split(';');
                 foreach (var extension in extensions)
                 {
-                    allowedFileExtensions.Add(extension.Trim('*').ToLower());
+                    allowedImageExtensions.Add(extension.Trim('*').ToLower());
                 }
+            }
+
+            allowedExtensions = new List<string>();
+            allowedExtensions.AddRange(allowedImageExtensions);
+            allowedExtensions.AddRange(allowedZipExtensions);
+            allowedExtensions = allowedExtensions.OrderBy(e => e).ToList();
+            
+            fileDialogFilter = "All Allowed Files|";
+            bool first = true;
+            foreach (string extension in allowedExtensions)
+            {
+                if (first) first = false;
+                else fileDialogFilter += ";";
+                fileDialogFilter += String.Format("*{0}", extension);
+            }
+
+            fileDialogFilter += "|Images Only|";
+            first = true;
+            foreach (string extension in allowedImageExtensions)
+            {
+                if (first) first = false;
+                else fileDialogFilter += ";";
+                fileDialogFilter += String.Format("*{0}", extension);
+            }
+
+            fileDialogFilter += "|Zip Archives Only|";
+            first = true;
+            foreach (string extension in allowedZipExtensions)
+            {
+                if (first) first = false;
+                else fileDialogFilter += ";";
+                fileDialogFilter += String.Format("*{0}", extension);
             }
         }
 
@@ -203,7 +248,6 @@ namespace EpubManga
         {
             IsBusy = true;
 
-            TotalImages = Data.Files.Count;
             TreatedImages = 0;
 
             if (!Data.OutputFile.EndsWith(".epub", StringComparison.InvariantCultureIgnoreCase))
@@ -228,7 +272,8 @@ namespace EpubManga
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Multiselect = true;
             ofd.RestoreDirectory = true;
-
+            ofd.Filter = fileDialogFilter;
+            
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 Data.Files = ofd.FileNames.Where(f =>
@@ -236,7 +281,7 @@ namespace EpubManga
                         if (string.IsNullOrEmpty(f)) return false;
 
                         FileInfo file = new FileInfo(f);
-                        if (allowedFileExtensions.Contains(file.Extension.ToLower())) return true;
+                        if (allowedExtensions.Contains(file.Extension.ToLower())) return true;
 
                         return false;
                     }).ToList();
@@ -264,19 +309,30 @@ namespace EpubManga
                 if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
                     lastSelectedFolder = fbd.SelectedPath;
-                    DirectoryInfo dir = new DirectoryInfo(lastSelectedFolder);
-                    List<FileInfo> files = dir.GetFiles().OrderBy(f => f.Name, new FileNameComparer()).ToList();
+                    List<FileInfo> files = new List<FileInfo>();
+                    GetDirectoryFiles(files, new DirectoryInfo(lastSelectedFolder));
+                    files = files.OrderBy(f => f.FullName, new FileNameComparer()).ToList();
 
                     List<string> paths = new List<string>();
                     foreach (FileInfo file in files)
                     {
-                        if (allowedFileExtensions.Contains(file.Extension.ToLower()))
+                        if (allowedExtensions.Contains(file.Extension.ToLower()))
                         {
                             paths.Add(file.FullName);
                         }
                     }
                     Data.Files = paths;
                 }
+            }
+        }
+
+        private void GetDirectoryFiles(List<FileInfo> files, DirectoryInfo directory)
+        {
+            files.AddRange(directory.GetFiles());
+
+            foreach (DirectoryInfo subDirecdtory in directory.GetDirectories())
+            {
+                GetDirectoryFiles(files, subDirecdtory);
             }
         }
 
@@ -315,83 +371,8 @@ namespace EpubManga
             InitializeWorkspace();
             InitializeBuilders();
 
-
-
-            int imageIndex = 1;
-
-            foreach (string path in Data.Files)
-            {
-                using (Bitmap from = new Bitmap(path))
-                {
-                    if (from.Width > from.Height)
-                    {
-                        if (Data.DoublePage == DoublePage.RotateLeft)
-                        {
-                            from.RotateFlip(RotateFlipType.Rotate270FlipNone);
-                            SaveImage(from, ref imageIndex, path);
-                        }
-                        else if (Data.DoublePage == DoublePage.RotateRight)
-                        {
-                            from.RotateFlip(RotateFlipType.Rotate90FlipNone);
-                            SaveImage(from, ref imageIndex, path);
-                        }
-                        else
-                        {
-                            int firstStart;
-                            int secondStart;
-
-                            switch (Data.DoublePage)
-                            {
-                                case DoublePage.LeftPageFirst:
-                                    firstStart = 0;
-                                    secondStart = from.Width / 2;
-                                    break;
-                                case DoublePage.RightPageFirst:
-                                    firstStart = from.Width / 2;
-                                    secondStart = 0;
-                                    break;
-                                default:
-                                    firstStart = 0;
-                                    secondStart = 0;
-                                    break;
-                            }
-
-                            using (Bitmap image = from.Clone(new RectangleF(firstStart, 0, from.Width / 2, from.Height), from.PixelFormat))
-                            {
-                                SaveImage(image, ref imageIndex, path);
-                            }
-
-                            using (Bitmap image = from.Clone(new RectangleF(secondStart, 0, from.Width / 2, from.Height), from.PixelFormat))
-                            {
-                                SaveImage(image, ref imageIndex, path);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        SaveImage(from, ref imageIndex, path);
-                    }
-                }
-
-                TreatedImages++;
-            }
-
-
-
-            string toWrite;
-            StreamWriter writer;
-
-            toWrite = builderContent1.ToString() + builderContent2.ToString() + builderContent3.ToString();
-            writer = new StreamWriter(oebpsFolderPath + "content.opf", false);
-            writer.Write(toWrite);
-            writer.Close();
-
-            toWrite = builderToc1.ToString() + builderToc2.ToString();
-            writer = new StreamWriter(oebpsFolderPath + "toc.ncx", false);
-            writer.Write(toWrite);
-            writer.Close();
-
-
+            CheckSelectedFiles();
+            ProcessImages();
 
             Cleanup();
         }
@@ -400,12 +381,37 @@ namespace EpubManga
         {
             IsBusy = false;
 
-            if (errors.Count > 0)
+            if (pathErrors.Count + zipErrors.Count + imageErrors.Count + ratioErrors.Count > 0)
             {
                 StringBuilder builder = new StringBuilder();
-                builder.AppendLine("The following images have been ignored because of their width / height ratio above 0.75:");
 
-                errors.ForEach(s => builder.AppendLine(s));
+                if (pathErrors.Count > 0)
+                {
+                    builder.AppendLine("The following files have been ignored because they do not exist:");
+                    pathErrors.ForEach(s => builder.AppendLine(s));
+                    builder.AppendLine();
+                }
+
+                if (zipErrors.Count > 0)
+                {
+                    builder.AppendLine("The following archives have been ignored because they could not be opened as zip archives:");
+                    zipErrors.ForEach(s => builder.AppendLine(s));
+                    builder.AppendLine();
+                }
+
+                if (imageErrors.Count > 0)
+                {
+                    builder.AppendLine("The following files have been ignored because they could not be opened as images:");
+                    imageErrors.ForEach(s => builder.AppendLine(s));
+                    builder.AppendLine();
+                }
+
+                if (ratioErrors.Count > 0)
+                {
+                    builder.AppendLine("The following images have been ignored because of their width / height ratio above 0.75:");
+                    ratioErrors.ForEach(s => builder.AppendLine(s));
+                    builder.AppendLine();
+                }
 
                 MessageBox.Show(builder.ToString(), "Errors", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
@@ -419,7 +425,11 @@ namespace EpubManga
             compilePath = Data.OutputFolder + Guid.NewGuid().ToString().Replace("{", "").Replace("}", "") + "\\";
             oebpsFolderPath = compilePath + "OEBPS\\";
             imagesFolderPath = oebpsFolderPath + "Images\\";
-            errors = new List<string>();
+
+            pathErrors = new List<string>();
+            zipErrors = new List<string>();
+            imageErrors = new List<string>();
+            ratioErrors = new List<string>();
 
             Directory.CreateDirectory(compilePath + "META-INF");
             Directory.CreateDirectory(compilePath + "OEBPS");
@@ -509,8 +519,164 @@ namespace EpubManga
             builderChapter2.AppendLine("</html>");
         }
 
+        private void CheckSelectedFiles()
+        {
+            List<string> paths = new List<string>(Data.Files);
+
+            foreach (string path in paths)
+            {
+                FileInfo file = new FileInfo(path);
+                if (!file.Exists)
+                {
+                    pathErrors.Add(path);
+                    Data.Files.Remove(path);
+                    continue;
+                }
+
+                if (!allowedZipExtensions.Contains(file.Extension.ToLower())) continue;
+
+                try
+                {
+                    using (ZipFile zipFile = new ZipFile(path))
+                    {
+                        int pathIndex = Data.Files.IndexOf(path);
+                        string zipPath = compilePath + Guid.NewGuid().ToString().Replace("{", "").Replace("}", "") + "\\";
+                        Directory.CreateDirectory(zipPath);
+                        tempDirectories.Add(zipPath);
+                        Data.Files.Remove(path);
+
+                        List<string> newFiles = new List<string>();
+                        foreach (ZipEntry entry in zipFile)
+                        {
+                            bool fileAllowed = false;
+                            foreach (string extension in allowedImageExtensions)
+                            {
+                                if (entry.FileName.EndsWith(extension, StringComparison.InvariantCultureIgnoreCase))
+                                {
+                                    fileAllowed = true;
+                                    break;
+                                }
+                            }
+
+                            if (fileAllowed)
+                            {
+                                entry.Extract(zipPath, ExtractExistingFileAction.OverwriteSilently);
+                                newFiles.Add(zipPath + entry.FileName.Replace("/", "\\"));
+                            }
+                        }
+
+                        newFiles = newFiles.OrderBy(f => f, new FileNameComparer()).ToList();
+                        foreach (string newFile in newFiles)
+                        {
+                            Data.Files.Insert(pathIndex, newFile);
+                            pathIndex++;
+                        }
+                    }
+                }
+                catch
+                {
+                    zipErrors.Add(path);
+                    Data.Files.Remove(path);
+                }
+            }
+
+            TotalImages = Data.Files.Count;
+        }
+
+        private void ProcessImages()
+        {
+            int imageIndex = 1;
+            foreach (string path in Data.Files)
+            {
+                Bitmap from = null;
+                try
+                {
+                    from = new Bitmap(path);
+                }
+                catch
+                {
+                    imageErrors.Add(path);
+                }
+                if (from == null) continue;
+
+                using (from)
+                {
+                    if (from.Width > from.Height)
+                    {
+                        if (Data.DoublePage == DoublePage.RotateLeft)
+                        {
+                            from.RotateFlip(RotateFlipType.Rotate270FlipNone);
+                            SaveImage(from, ref imageIndex, path);
+                        }
+                        else if (Data.DoublePage == DoublePage.RotateRight)
+                        {
+                            from.RotateFlip(RotateFlipType.Rotate90FlipNone);
+                            SaveImage(from, ref imageIndex, path);
+                        }
+                        else
+                        {
+                            int firstStart;
+                            int secondStart;
+
+                            switch (Data.DoublePage)
+                            {
+                                case DoublePage.LeftPageFirst:
+                                    firstStart = 0;
+                                    secondStart = from.Width / 2;
+                                    break;
+                                case DoublePage.RightPageFirst:
+                                    firstStart = from.Width / 2;
+                                    secondStart = 0;
+                                    break;
+                                default:
+                                    firstStart = 0;
+                                    secondStart = 0;
+                                    break;
+                            }
+
+                            using (Bitmap image = from.Clone(new RectangleF(firstStart, 0, from.Width / 2, from.Height), from.PixelFormat))
+                            {
+                                SaveImage(image, ref imageIndex, path);
+                            }
+
+                            using (Bitmap image = from.Clone(new RectangleF(secondStart, 0, from.Width / 2, from.Height), from.PixelFormat))
+                            {
+                                SaveImage(image, ref imageIndex, path);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        SaveImage(from, ref imageIndex, path);
+                    }
+                }
+
+                TreatedImages++;
+            }
+        }
+
         private void Cleanup()
         {
+            string toWrite;
+            StreamWriter writer;
+
+            toWrite = builderContent1.ToString() + builderContent2.ToString() + builderContent3.ToString();
+            writer = new StreamWriter(oebpsFolderPath + "content.opf", false);
+            writer.Write(toWrite);
+            writer.Close();
+
+            toWrite = builderToc1.ToString() + builderToc2.ToString();
+            writer = new StreamWriter(oebpsFolderPath + "toc.ncx", false);
+            writer.Write(toWrite);
+            writer.Close();
+
+
+
+            foreach (string path in tempDirectories)
+            {
+                Directory.Delete(path, true);
+            }
+
             using (ZipFile zip = new ZipFile())
             {
                 zip.AddDirectory(compilePath);
@@ -526,12 +692,9 @@ namespace EpubManga
 
         private void SaveImage(Bitmap imageOriginal, ref int imageIndex, string imagePath)
         {
-            int width = (Int32)Math.Round((double)(Data.Height * imageOriginal.Width / imageOriginal.Height), 0, MidpointRounding.AwayFromZero);
-            int theoreticalWidth = (Int32)Math.Round((double)(Data.Height * 0.75), 0, MidpointRounding.AwayFromZero);
-
-            if (width / Data.Height > 0.75)
+            if (imageOriginal.Width / imageOriginal.Height > 0.75)
             {
-                errors.Add(imagePath);
+                ratioErrors.Add(imagePath);
                 return;
             }
 
@@ -539,11 +702,13 @@ namespace EpubManga
             {
                 using (Bitmap trimmedImage = TrimImage(grayedImage, Data.Trimming, Data.Grayscale))
                 {
+                    int theoreticalWidth = (Int32)Math.Round((double)(Data.Height * 0.75), 0, MidpointRounding.AwayFromZero);
+
                     using (Bitmap completedImage = new Bitmap(theoreticalWidth, Data.Height))
                     {
                         using (Graphics g = Graphics.FromImage((System.Drawing.Image)completedImage))
                         {
-                            width = (Int32)Math.Round((double)(Data.Height * trimmedImage.Width / trimmedImage.Height), 0, MidpointRounding.AwayFromZero);
+                            int width = (Int32)Math.Round((double)(Data.Height * trimmedImage.Width / trimmedImage.Height), 0, MidpointRounding.AwayFromZero);
 
                             g.FillRectangle(new SolidBrush(Color.White), 0, 0, theoreticalWidth, Data.Height);
                             g.DrawImage(trimmedImage, (float)((theoreticalWidth - width) * 0.65), 0, width, Data.Height);
