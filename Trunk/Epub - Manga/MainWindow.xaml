@@ -5,46 +5,7 @@
         Title="Manga to Epub" Height="245" Width="800" ResizeMode="NoResize">
 
     <Window.Resources>
-        <manga:BoolInverterConverter x:Key="BoolInverterConv"/>
-        <manga:DoublePageToBoolConverter x:Key="DoublePageToBoolConv"/>
-        <manga:ListStringToStringConverter x:Key="ListStringToStringConv"/>
-        
-        <Style BasedOn="{StaticResource {x:Type TextBox}}" TargetType="{x:Type TextBox}">
-            <Setter Property="Margin" Value="2"/>
-            <Setter Property="Padding" Value="2"/>
-        </Style>
-
-        <Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-            <Setter Property="Margin" Value="2,4,2,2"/>
-            <Setter Property="Padding" Value="2"/>
-        </Style>
-
-        <Style BasedOn="{StaticResource {x:Type Button}}" TargetType="{x:Type Button}">
-            <Setter Property="Margin" Value="2"/>
-            <Setter Property="Padding" Value="2"/>
-        </Style>
-        
-        <Style x:Key="ImageButton" BasedOn="{StaticResource {x:Type Button}}" TargetType="{x:Type Button}">
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Height" Value="24"/>
-            <Setter Property="Width" Value="24"/>
-        </Style>
-
-        <Style BasedOn="{StaticResource {x:Type ProgressBar}}" TargetType="{x:Type ProgressBar}">
-            <Setter Property="Margin" Value="2"/>
-            <Setter Property="Padding" Value="2"/>
-        </Style>
-
-        <Style BasedOn="{StaticResource {x:Type RadioButton}}" TargetType="{x:Type RadioButton}">
-            <Setter Property="Margin" Value="2,6,2,2"/>
-            <Setter Property="Padding" Value="2"/>
-        </Style>
-
-        <Style BasedOn="{StaticResource {x:Type CheckBox}}" TargetType="{x:Type CheckBox}">
-            <Setter Property="Margin" Value="2,8,2,2"/>
-            <Setter Property="Padding" Value="2"/>
-        </Style>
-        
+        <ResourceDictionary Source="./Styles/Style.xaml"/>
     </Window.Resources>
 
     <Grid>
@@ -56,15 +17,14 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="10"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="10"/>
             <RowDefinition Height="27"/>
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="85"/>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="85"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         
@@ -73,7 +33,7 @@
         <DockPanel Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3">
             <Button DockPanel.Dock="Right" Style="{StaticResource ImageButton}" ToolTip="Select Folder"
                 Command="{Binding SelectInputFolderCommand}">
-                    <Image Source="./Images/Folder.png"/>
+                <Image Source="./Images/Folder.png"/>
             </Button>
             <Button DockPanel.Dock="Right" Style="{StaticResource ImageButton}" ToolTip="Select Files"
                 Command="{Binding SelectFilesCommand}">
@@ -89,7 +49,7 @@
         <DockPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3">
             <Button DockPanel.Dock="Right" Style="{StaticResource ImageButton}" ToolTip="Select Folder"
                 Command="{Binding SelectOutputFolderCommand}">
-                    <Image Source="./Images/Folder.png"/>
+                <Image Source="./Images/Folder.png"/>
             </Button>
 
             <TextBox DockPanel.Dock="Left" IsReadOnly="True"
@@ -113,74 +73,15 @@
             manga:TextBoxExtension.Regexp="FileName"
             IsReadOnly="{Binding IsBusy, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
             Text="{Binding Data.OutputFile, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-
-        <TextBlock Grid.Row="3" Grid.Column="2" Text="Height"/>
-        <TextBox Grid.Row="3" Grid.Column="3"
-            manga:TextBoxExtension.Regexp="Integer"
-            IsReadOnly="{Binding IsBusy, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-            Text="{Binding Data.Height, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
         
         
-        <TextBlock Grid.Row="5" Grid.Column="0" Text="Double Page"/>
-        <Grid Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="3">
-            
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <RadioButton Grid.Column="0" GroupName="DoublePage" Content="Landscape - Rotate Left"
-                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                IsChecked="{Binding Data.DoublePage, Converter={StaticResource DoublePageToBoolConv}, ConverterParameter=RotateLeft, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-            <RadioButton Grid.Column="1" GroupName="DoublePage" Content="Landscape - Rotate Right"
-                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                IsChecked="{Binding Data.DoublePage, Converter={StaticResource DoublePageToBoolConv}, ConverterParameter=RotateRight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-            <RadioButton Grid.Column="2" GroupName="DoublePage" Content="Cut In Two - Left Page First"
-                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                IsChecked="{Binding Data.DoublePage, Converter={StaticResource DoublePageToBoolConv}, ConverterParameter=LeftPageFirst, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-            <RadioButton Grid.Column="3" GroupName="DoublePage" Content="Cut In Two - Right Page First"
-                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                IsChecked="{Binding Data.DoublePage, Converter={StaticResource DoublePageToBoolConv}, ConverterParameter=RightPageFirst, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-            
-        </Grid>
-        
-        <TextBlock Grid.Row="6" Grid.Column="0" Text="Grayscale"/>
-        <Grid Grid.Row="6" Grid.Column="1">
-            
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <CheckBox Grid.Column="0"
-                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                IsChecked="{Binding Data.Grayscale, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
-            
-            <TextBlock Grid.Column="1" Text="Trimming"/>
-            <CheckBox Grid.Column="2"
-                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                IsChecked="{Binding Data.Trimming, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
-            </CheckBox>
-            
-            <TextBlock Grid.Column="3" Text="Trim At"/>
-            <TextBox Grid.Column="4"
-                manga:TextBoxExtension.Regexp="Integer"
-                IsReadOnly="{Binding IsBusy, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                IsEnabled="{Binding Data.Trimming, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                Text="{Binding Data.TrimmingValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-            
-        </Grid>
+        <manga:Options Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4"/>
         
         
-        <Button Grid.Row="8" Grid.Column="0" Content="Generate"
+        <Button Grid.Row="7" Grid.Column="0" Content="Generate"
             Command="{Binding GenerateCommand}" />
         
-        <ProgressBar Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="3" Minimum="0"
+        <ProgressBar Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="3" Minimum="0"
             Maximum="{Binding TotalImages, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
             Value="{Binding TreatedImages, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
 

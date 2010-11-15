@@ -1,0 +1,93 @@
+﻿<UserControl x:Class="EpubManga.Options"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:manga="clr-namespace:EpubManga">
+
+    <UserControl.Resources>
+        <ResourceDictionary Source="./Styles/Style.xaml"/>
+    </UserControl.Resources>
+    
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="85"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="85"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Grayscale"/>
+        <Grid Grid.Row="0" Grid.Column="1">
+            
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="50"/>
+                <ColumnDefinition Width="85"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <CheckBox Grid.Column="0"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                IsChecked="{Binding Data.Grayscale, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+
+            <TextBlock Grid.Column="1" Text="Trimming"/>
+            <CheckBox Grid.Column="2"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                IsChecked="{Binding Data.Trimming, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+            
+        </Grid>
+
+        <TextBlock Grid.Row="0" Grid.Column="2" Text="Height"/>
+        <Grid Grid.Row="0" Grid.Column="3">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox Grid.Column="0" Width="100"
+                manga:TextBoxExtension.Regexp="Integer"
+                IsReadOnly="{Binding IsBusy, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                Text="{Binding Data.Height, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+
+            <Button Grid.Column="2" Content="Preview" Width="100"
+                Command="{Binding ShowPreviewCommand}"
+                Visibility="{Binding DisplayPreviewButton, Converter={StaticResource BoolToVisibilityConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"/>
+
+        </Grid>
+        
+
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Double Page"/>
+        <Grid Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <RadioButton Grid.Column="0" GroupName="DoublePage" Content="Landscape - Rotate Left"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                IsChecked="{Binding Data.DoublePage, Converter={StaticResource DoublePageToBoolConv}, ConverterParameter=RotateLeft, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+            <RadioButton Grid.Column="1" GroupName="DoublePage" Content="Landscape - Rotate Right"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                IsChecked="{Binding Data.DoublePage, Converter={StaticResource DoublePageToBoolConv}, ConverterParameter=RotateRight, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+            <RadioButton Grid.Column="2" GroupName="DoublePage" Content="Cut In Two - Left Page First"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                IsChecked="{Binding Data.DoublePage, Converter={StaticResource DoublePageToBoolConv}, ConverterParameter=LeftPageFirst, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+            <RadioButton Grid.Column="3" GroupName="DoublePage" Content="Cut In Two - Right Page First"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                IsChecked="{Binding Data.DoublePage, Converter={StaticResource DoublePageToBoolConv}, ConverterParameter=RightPageFirst, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+
+        </Grid>
+        
+    </Grid>
+</UserControl>
