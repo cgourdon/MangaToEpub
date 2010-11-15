@@ -67,24 +67,45 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Command.cs" />
+    <Compile Include="ImageTreater.cs" />
+    <Compile Include="Tools\Command.cs" />
     <Compile Include="Converters\BoolInverterConverter.cs" />
+    <Compile Include="Converters\BoolToVisibilityConverter.cs" />
     <Compile Include="DataContext.cs" />
     <Compile Include="Enumerations\DoublePage.cs" />
     <Compile Include="Converters\DoublePageToBoolConverter.cs" />
     <Compile Include="Converters\ListStringToStringConverter.cs" />
     <Compile Include="Enumerations\Regexp.cs" />
-    <Compile Include="FileNameComparer.cs" />
+    <Compile Include="Tools\FileNameComparer.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="TextBoxExtension.cs" />
+    <Compile Include="Options.xaml.cs">
+      <DependentUpon>Options.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Preview.cs" />
+    <Compile Include="PreviewWindow.xaml.cs">
+      <DependentUpon>PreviewWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\TextBoxExtension.cs" />
     <Compile Include="UserInput.cs" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Options.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PreviewWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Styles\Style.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>

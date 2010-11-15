@@ -24,7 +24,6 @@ namespace EpubManga
 
         private EncoderParameters parameters;
         private ImageCodecInfo codec;
-        private ImageAttributes imageAttributes;
 
         private StringBuilder builderContent1;
         private StringBuilder builderContent2;
@@ -61,6 +60,7 @@ namespace EpubManga
             }
 
 
+            DisplayPreviewButton = true;
             IsBusy = false;
             InitializeCommands();
 
@@ -73,16 +73,6 @@ namespace EpubManga
             parameters = new EncoderParameters(1);
             parameters.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Compression, 1);
             codec = ImageCodecInfo.GetImageEncoders().Where(c => c.MimeType.Contains("jpeg")).FirstOrDefault();
-            imageAttributes = new ImageAttributes();
-            imageAttributes.SetColorMatrix(new ColorMatrix(new float[][] 
-                {
-                    new float[] {.3f, .3f, .3f, 0, 0},
-                    new float[] {.59f, .59f, .59f, 0, 0},
-                    new float[] {.11f, .11f, .11f, 0, 0},
-                    new float[] {0, 0, 0, 1, 0},
-                    new float[] {0, 0, 0, 0, 1}
-                }));
-
 
 
             allowedImageExtensions = new List<string>();
@@ -134,6 +124,26 @@ namespace EpubManga
         #region Properties
 
         public UserInput Data { get; private set; }
+
+        #region DisplayPreviewButton
+
+        private bool displayPreviewButton;
+        private static PropertyChangedEventArgs displayPreviewButtonChangedArgs = new PropertyChangedEventArgs("DisplayPreviewButton");
+        public bool DisplayPreviewButton
+        {
+            get
+            {
+                return displayPreviewButton;
+            }
+            set
+            {
+                if (displayPreviewButton == value) return;
+                displayPreviewButton = value;
+                NotifyPropertyChanged(displayPreviewButtonChangedArgs);
+            }
+        }
+
+        #endregion
 
         #region IsBusy
 
@@ -203,6 +213,7 @@ namespace EpubManga
         public Command SelectFilesCommand { get; private set; }
         public Command SelectInputFolderCommand { get; private set; }
         public Command SelectOutputFolderCommand { get; private set; }
+        public Command ShowPreviewCommand { get; private set; }
 
         private void InitializeCommands()
         {
@@ -228,6 +239,12 @@ namespace EpubManga
             {
                 CanExecuteDelegate = (obj) => SelectOutputFolderCommandCanExecute(),
                 ExecuteDelegate = (obj) => SelectOutputFolderCommandExecute()
+            };
+
+            ShowPreviewCommand = new Command()
+            {
+                CanExecuteDelegate = (obj) => ShowPreviewCommandCanExecute(),
+                ExecuteDelegate = (obj) => ShowPreviewCommandExecute()
             };
         }
 
@@ -357,6 +374,22 @@ namespace EpubManga
                     Data.OutputFolder = fbd.SelectedPath.EndsWith("\\") ? fbd.SelectedPath : fbd.SelectedPath + "\\";
                 }
             }
+        }
+
+        #endregion
+
+        #region ShowPreviewCommand
+
+        private bool ShowPreviewCommandCanExecute()
+        {
+            return ((!IsBusy)
+                && (Data.Files != null)
+                && (Data.Files.Count > 0));
+        }
+
+        private void ShowPreviewCommandExecute()
+        {
+            new PreviewWindow(Data).ShowDialog();
         }
 
         #endregion
@@ -655,6 +688,35 @@ namespace EpubManga
             }
         }
 
+        private void SaveImage(Bitmap imageOriginal, ref int imageIndex, string imagePath)
+        {
+            if (imageOriginal.Width / imageOriginal.Height > 0.75)
+            {
+                ratioErrors.Add(imagePath);
+                return;
+            }
+
+            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(imageOriginal, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue))
+            {
+                treatedImage.Save(imagesFolderPath + "I" + imageIndex.ToString() + ".jpg", codec, parameters);
+            }
+
+            builderContent1.AppendLine("\t\t<item xmlns=\"\" id=\"P" + imageIndex.ToString() + "\" href=\"P" + imageIndex.ToString() + ".xml\" media-type=\"application/xhtml+xml\"/>");
+            builderContent2.AppendLine("\t\t<itemref xmlns=\"\" idref=\"P" + imageIndex.ToString() + "\" linear=\"yes\"/>");
+            builderToc1.AppendLine("\t\t<navPoint xmlns=\"\" id=\"N" + imageIndex.ToString() + "\" playOrder=\"" + imageIndex.ToString() + "\"><navLabel><text>P" + imageIndex.ToString() + "</text></navLabel><content src=\"P" + imageIndex.ToString() + ".xml\"/></navPoint>");
+
+            StringBuilder chapter = new StringBuilder();
+            chapter.Append(builderChapter1.ToString());
+            chapter.AppendLine("\t\t<img style=\"margin:0\" src=\"Images/I" + imageIndex.ToString() + ".jpg\" />");
+            chapter.Append(builderChapter2.ToString());
+
+            StreamWriter chapterWriter = new StreamWriter(oebpsFolderPath + "P" + imageIndex.ToString() + ".xml", false);
+            chapterWriter.Write(chapter.ToString());
+            chapterWriter.Close();
+
+            imageIndex++;
+        }
+
         private void Cleanup()
         {
             string toWrite;
@@ -684,157 +746,6 @@ namespace EpubManga
             }
 
             Directory.Delete(compilePath, true);
-        }
-
-        #endregion
-
-        #region Image Treatment
-
-        private void SaveImage(Bitmap imageOriginal, ref int imageIndex, string imagePath)
-        {
-            if (imageOriginal.Width / imageOriginal.Height > 0.75)
-            {
-                ratioErrors.Add(imagePath);
-                return;
-            }
-
-            using (Bitmap grayedImage = GrayImage(imageOriginal, Data.Grayscale))
-            {
-                using (Bitmap trimmedImage = TrimImage(grayedImage, Data.Trimming, Data.Grayscale))
-                {
-                    int theoreticalWidth = (Int32)Math.Round((double)(Data.Height * 0.75), 0, MidpointRounding.AwayFromZero);
-
-                    using (Bitmap completedImage = new Bitmap(theoreticalWidth, Data.Height))
-                    {
-                        using (Graphics g = Graphics.FromImage((System.Drawing.Image)completedImage))
-                        {
-                            int width = (Int32)Math.Round((double)(Data.Height * trimmedImage.Width / trimmedImage.Height), 0, MidpointRounding.AwayFromZero);
-
-                            g.FillRectangle(new SolidBrush(Color.White), 0, 0, theoreticalWidth, Data.Height);
-                            g.DrawImage(trimmedImage, (float)((theoreticalWidth - width) * 0.65), 0, width, Data.Height);
-                        }
-
-                        completedImage.Save(imagesFolderPath + "I" + imageIndex.ToString() + ".jpg", codec, parameters);
-                    }
-                }
-            }
-
-            builderContent1.AppendLine("\t\t<item xmlns=\"\" id=\"P" + imageIndex.ToString() + "\" href=\"P" + imageIndex.ToString() + ".xml\" media-type=\"application/xhtml+xml\"/>");
-            builderContent2.AppendLine("\t\t<itemref xmlns=\"\" idref=\"P" + imageIndex.ToString() + "\" linear=\"yes\"/>");
-            builderToc1.AppendLine("\t\t<navPoint xmlns=\"\" id=\"N" + imageIndex.ToString() + "\" playOrder=\"" + imageIndex.ToString() + "\"><navLabel><text>P" + imageIndex.ToString() + "</text></navLabel><content src=\"P" + imageIndex.ToString() + ".xml\"/></navPoint>");
-
-            StringBuilder chapter = new StringBuilder();
-            chapter.Append(builderChapter1.ToString());
-            chapter.AppendLine("\t\t<img style=\"margin:0\" src=\"Images/I" + imageIndex.ToString() + ".jpg\" />");
-            chapter.Append(builderChapter2.ToString());
-
-            StreamWriter chapterWriter = new StreamWriter(oebpsFolderPath + "P" + imageIndex.ToString() + ".xml", false);
-            chapterWriter.Write(chapter.ToString());
-            chapterWriter.Close();
-
-            imageIndex++;
-        }
-
-        private Bitmap GrayImage(Bitmap originalImage, bool toGrayscale)
-        {
-            if (toGrayscale)
-            {
-                Bitmap grayedImage = new Bitmap(originalImage.Width, originalImage.Height);
-                using (Graphics g = Graphics.FromImage(grayedImage))
-                {
-                    g.DrawImage(originalImage, new Rectangle(0, 0, originalImage.Width, originalImage.Height), 0, 0, originalImage.Width, originalImage.Height, GraphicsUnit.Pixel, imageAttributes);
-                }
-                return grayedImage;
-            }
-            else
-            {
-                return originalImage;
-            }
-        }
-
-        private Bitmap TrimImage(Bitmap originalImage, bool toTrim, bool isGrayed)
-        {
-            if (toTrim)
-            {
-                using (Bitmap grayedImage = GrayImage(originalImage, !isGrayed))
-                {
-                    int startX = -2;
-                    int startY = -2;
-                    int endX = -2;
-                    int endY = -2;
-
-                    for (int i = 0; i < grayedImage.Width; i++)
-                    {
-                        for (int j = 0; j < grayedImage.Height; j++)
-                        {
-                            Color orgColor = grayedImage.GetPixel(i, j);
-                            if ((orgColor.R < Data.TrimmingValue) || (orgColor.G < Data.TrimmingValue) || (orgColor.B < Data.TrimmingValue))
-                            {
-                                startX = i - 1;
-                                break;
-                            }
-                        }
-
-                        if (startX != -2) break;
-                    }
-
-                    for (int j = 0; j < grayedImage.Height; j++)
-                    {
-                        for (int i = 0; i < grayedImage.Width; i++)
-                        {
-                            Color orgColor = grayedImage.GetPixel(i, j);
-                            if ((orgColor.R < Data.TrimmingValue) || (orgColor.G < Data.TrimmingValue) || (orgColor.B < Data.TrimmingValue))
-                            {
-                                startY = j - 1;
-                                break;
-                            }
-                        }
-
-                        if (startY != -2) break;
-                    }
-
-                    for (int i = grayedImage.Width - 1; i >= 0; i--)
-                    {
-                        for (int j = 0; j < grayedImage.Height; j++)
-                        {
-                            Color orgColor = grayedImage.GetPixel(i, j);
-                            if ((orgColor.R < Data.TrimmingValue) || (orgColor.G < Data.TrimmingValue) || (orgColor.B < Data.TrimmingValue))
-                            {
-                                endX = i + 1;
-                                break;
-                            }
-                        }
-
-                        if (endX != -2) break;
-                    }
-
-                    for (int j = grayedImage.Height - 1; j >= 0; j--)
-                    {
-                        for (int i = 0; i < grayedImage.Width; i++)
-                        {
-                            Color orgColor = grayedImage.GetPixel(i, j);
-                            if ((orgColor.R < Data.TrimmingValue) || (orgColor.G < Data.TrimmingValue) || (orgColor.B < Data.TrimmingValue))
-                            {
-                                endY = j + 1;
-                                break;
-                            }
-                        }
-
-                        if (endY != -2) break;
-                    }
-
-                    if (startX < 0) startX = 0;
-                    if (startY < 0) startY = 0;
-                    if (endX < 0) endX = 0;
-                    if (endY < 0) endY = 0;
-
-                    return originalImage.Clone(new RectangleF(startX, startY, endX - startX, endY - startY), originalImage.PixelFormat);
-                }
-            }
-            else
-            {
-                return originalImage;
-            }
         }
 
         #endregion
