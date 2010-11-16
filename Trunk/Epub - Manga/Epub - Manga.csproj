@@ -67,6 +67,15 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SharpZipLib\SharpZipBaseException.cs" />
+    <Compile Include="SharpZipLib\Tar\InvalidHeaderException.cs" />
+    <Compile Include="SharpZipLib\Tar\TarArchive.cs" />
+    <Compile Include="SharpZipLib\Tar\TarBuffer.cs" />
+    <Compile Include="SharpZipLib\Tar\TarEntry.cs" />
+    <Compile Include="SharpZipLib\Tar\TarException.cs" />
+    <Compile Include="SharpZipLib\Tar\TarHeader.cs" />
+    <Compile Include="SharpZipLib\Tar\TarInputStream.cs" />
+    <Compile Include="SharpZipLib\Tar\TarOutputStream.cs" />
     <Compile Include="Tools\ImageTreater.cs" />
     <Compile Include="Tools\Command.cs" />
     <Compile Include="Converters\BoolInverterConverter.cs" />
