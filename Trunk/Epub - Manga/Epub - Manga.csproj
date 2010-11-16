@@ -67,7 +67,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ImageTreater.cs" />
+    <Compile Include="Tools\ImageTreater.cs" />
     <Compile Include="Tools\Command.cs" />
     <Compile Include="Converters\BoolInverterConverter.cs" />
     <Compile Include="Converters\BoolToVisibilityConverter.cs" />
