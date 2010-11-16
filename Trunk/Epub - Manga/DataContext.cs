@@ -634,53 +634,11 @@ namespace EpubManga
 
                 using (from)
                 {
-                    if (from.Width > from.Height)
+                    List<Bitmap> images = ImageTreater.GetInstance().HandleDoublePage(from, Data.DoublePage);
+                    foreach (Bitmap image in images)
                     {
-                        if (Data.DoublePage == DoublePage.RotateLeft)
-                        {
-                            from.RotateFlip(RotateFlipType.Rotate270FlipNone);
-                            SaveImage(from, ref imageIndex, path);
-                        }
-                        else if (Data.DoublePage == DoublePage.RotateRight)
-                        {
-                            from.RotateFlip(RotateFlipType.Rotate90FlipNone);
-                            SaveImage(from, ref imageIndex, path);
-                        }
-                        else
-                        {
-                            int firstStart;
-                            int secondStart;
-
-                            switch (Data.DoublePage)
-                            {
-                                case DoublePage.LeftPageFirst:
-                                    firstStart = 0;
-                                    secondStart = from.Width / 2;
-                                    break;
-                                case DoublePage.RightPageFirst:
-                                    firstStart = from.Width / 2;
-                                    secondStart = 0;
-                                    break;
-                                default:
-                                    firstStart = 0;
-                                    secondStart = 0;
-                                    break;
-                            }
-
-                            using (Bitmap image = from.Clone(new RectangleF(firstStart, 0, from.Width / 2, from.Height), from.PixelFormat))
-                            {
-                                SaveImage(image, ref imageIndex, path);
-                            }
-
-                            using (Bitmap image = from.Clone(new RectangleF(secondStart, 0, from.Width / 2, from.Height), from.PixelFormat))
-                            {
-                                SaveImage(image, ref imageIndex, path);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        SaveImage(from, ref imageIndex, path);
+                        SaveImage(image, ref imageIndex, path);
+                        image.Dispose();
                     }
                 }
 

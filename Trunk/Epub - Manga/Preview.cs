@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -299,58 +300,22 @@ namespace EpubManga
 
                     using (imageToTreat)
                     {
-                        if (imageToTreat.Width > imageToTreat.Height)
+                        List<Bitmap> images = ImageTreater.GetInstance().HandleDoublePage(imageToTreat, Data.DoublePage);
+                        if (images.Count == 1)
                         {
-                            if (Data.DoublePage == DoublePage.RotateLeft)
-                            {
-                                imageToTreat.RotateFlip(RotateFlipType.Rotate270FlipNone);
-                                SetImage1(imageToTreat, stream);
-                                Image2 = null;
-                            }
-                            else if (Data.DoublePage == DoublePage.RotateRight)
-                            {
-                                imageToTreat.RotateFlip(RotateFlipType.Rotate90FlipNone);
-                                SetImage1(imageToTreat, stream);
-                                Image2 = null;
-                            }
-                            else
-                            {
-                                int firstStart;
-                                int secondStart;
-
-                                switch (Data.DoublePage)
-                                {
-                                    case DoublePage.LeftPageFirst:
-                                        firstStart = 0;
-                                        secondStart = imageToTreat.Width / 2;
-                                        break;
-                                    case DoublePage.RightPageFirst:
-                                        firstStart = imageToTreat.Width / 2;
-                                        secondStart = 0;
-                                        break;
-                                    default:
-                                        firstStart = 0;
-                                        secondStart = 0;
-                                        break;
-                                }
-
-                                using (Bitmap image1 = imageToTreat.Clone(new RectangleF(firstStart, 0, imageToTreat.Width / 2, imageToTreat.Height), imageToTreat.PixelFormat))
-                                {
-                                    SetImage1(image1, stream);
-                                }
-
-                                stream.Flush();
-
-                                using (Bitmap image2 = imageToTreat.Clone(new RectangleF(secondStart, 0, imageToTreat.Width / 2, imageToTreat.Height), imageToTreat.PixelFormat))
-                                {
-                                    SetImage2(image2, stream);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            SetImage1(imageToTreat, stream);
+                            SetImage1(images[0], stream);
+                            images[0].Dispose();
                             Image2 = null;
+                        }
+                        else if (images.Count == 2)
+                        {
+                            SetImage1(images[0], stream);
+                            images[0].Dispose();
+
+                            stream.Flush();
+
+                            SetImage2(images[1], stream);
+                            images[1].Dispose();
                         }
                     }
                 }

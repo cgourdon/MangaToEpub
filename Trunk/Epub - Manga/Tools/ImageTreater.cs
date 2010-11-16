@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 
@@ -54,6 +55,58 @@ namespace EpubManga
 
 
         #region Image Treatment
+
+        public List<Bitmap> HandleDoublePage(Bitmap image, DoublePage doublePage)
+        {
+            List<Bitmap> result = new List<Bitmap>();
+
+            if (image.Width > image.Height)
+            {
+                if (doublePage == DoublePage.RotateLeft)
+                {
+                    image.RotateFlip(RotateFlipType.Rotate270FlipNone);
+                    result.Add(image);
+                }
+                else if (doublePage == DoublePage.RotateRight)
+                {
+                    image.RotateFlip(RotateFlipType.Rotate90FlipNone);
+                    result.Add(image);
+                }
+                else
+                {
+                    int firstStart;
+                    int secondStart;
+
+                    switch (doublePage)
+                    {
+                        case DoublePage.LeftPageFirst:
+                            firstStart = 0;
+                            secondStart = image.Width / 2;
+                            break;
+                        case DoublePage.RightPageFirst:
+                            firstStart = image.Width / 2;
+                            secondStart = 0;
+                            break;
+                        default:
+                            firstStart = 0;
+                            secondStart = 0;
+                            break;
+                    }
+
+                    Bitmap image1 = image.Clone(new RectangleF(firstStart, 0, image.Width / 2, image.Height), image.PixelFormat);
+                    result.Add(image1);
+
+                    Bitmap image2 = image.Clone(new RectangleF(secondStart, 0, image.Width / 2, image.Height), image.PixelFormat);
+                    result.Add(image2);
+                }
+            }
+            else
+            {
+                result.Add(image);
+            }
+
+            return result;
+        }
 
         public Bitmap TreatImage(Bitmap originalImage, int height, bool grayscale, bool trimming, int trimmingValue)
         {
