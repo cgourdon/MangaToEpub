@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Input;
+using ICSharpCode.SharpZipLib.Tar;
 using Ionic.Zip;
 
 namespace EpubManga
@@ -18,6 +19,7 @@ namespace EpubManga
 
         private List<string> allowedExtensions;
         private List<string> allowedImageExtensions;
+        private List<string> allowedTarExtensions = new List<string>() { ".tar", ".cbt" };
         private List<string> allowedZipExtensions = new List<string>() { ".zip", ".cbz" };
 
         private string fileDialogFilter;
@@ -41,6 +43,7 @@ namespace EpubManga
         private BackgroundWorker worker;
 
         private List<string> pathErrors;
+        private List<string> tarErrors;
         private List<string> zipErrors;
         private List<string> imageErrors;
         private List<string> ratioErrors;
@@ -88,6 +91,7 @@ namespace EpubManga
 
             allowedExtensions = new List<string>();
             allowedExtensions.AddRange(allowedImageExtensions);
+            allowedExtensions.AddRange(allowedTarExtensions);
             allowedExtensions.AddRange(allowedZipExtensions);
             allowedExtensions = allowedExtensions.OrderBy(e => e).ToList();
             
@@ -102,16 +106,19 @@ namespace EpubManga
 
             fileDialogFilter += "|Images Only|";
             first = true;
-            foreach (string extension in allowedImageExtensions)
+            foreach (string extension in allowedImageExtensions.OrderBy(e => e))
             {
                 if (first) first = false;
                 else fileDialogFilter += ";";
                 fileDialogFilter += String.Format("*{0}", extension);
             }
 
-            fileDialogFilter += "|Zip Archives Only|";
+            fileDialogFilter += "|Archives Only|";
             first = true;
-            foreach (string extension in allowedZipExtensions)
+            List<string> allowedArchiveExtensions = new List<string>();
+            allowedArchiveExtensions.AddRange(allowedTarExtensions);
+            allowedArchiveExtensions.AddRange(allowedZipExtensions);
+            foreach (string extension in allowedArchiveExtensions.OrderBy(e => e))
             {
                 if (first) first = false;
                 else fileDialogFilter += ";";
@@ -414,7 +421,7 @@ namespace EpubManga
         {
             IsBusy = false;
 
-            if (pathErrors.Count + zipErrors.Count + imageErrors.Count + ratioErrors.Count > 0)
+            if (pathErrors.Count + tarErrors.Count + zipErrors.Count + imageErrors.Count + ratioErrors.Count > 0)
             {
                 StringBuilder builder = new StringBuilder();
 
@@ -422,6 +429,13 @@ namespace EpubManga
                 {
                     builder.AppendLine("The following files have been ignored because they do not exist:");
                     pathErrors.ForEach(s => builder.AppendLine(s));
+                    builder.AppendLine();
+                }
+
+                if (tarErrors.Count > 0)
+                {
+                    builder.AppendLine("The following archives have been ignored because they could not be opened as tar archives:");
+                    tarErrors.ForEach(s => builder.AppendLine(s));
                     builder.AppendLine();
                 }
 
@@ -460,6 +474,7 @@ namespace EpubManga
             imagesFolderPath = oebpsFolderPath + "Images\\";
 
             pathErrors = new List<string>();
+            tarErrors = new List<string>();
             zipErrors = new List<string>();
             imageErrors = new List<string>();
             ratioErrors = new List<string>();
@@ -566,37 +581,38 @@ namespace EpubManga
                     continue;
                 }
 
-                if (!allowedZipExtensions.Contains(file.Extension.ToLower())) continue;
-
-                try
+                if (allowedTarExtensions.Contains(file.Extension.ToLower()))
                 {
-                    using (ZipFile zipFile = new ZipFile(path))
+                    CheckTarArchive(path);
+                }
+                if (allowedZipExtensions.Contains(file.Extension.ToLower()))
+                {
+                    CheckZipArchive(path);
+                }
+            }
+
+            TotalImages = Data.Files.Count;
+        }
+
+        private void CheckTarArchive(string path)
+        {
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open))
+                {
+                    using (TarArchive tarFile = TarArchive.CreateInputTarArchive(stream))
                     {
                         int pathIndex = Data.Files.IndexOf(path);
-                        string zipPath = compilePath + Guid.NewGuid().ToString().Replace("{", "").Replace("}", "") + "\\";
-                        Directory.CreateDirectory(zipPath);
-                        tempDirectories.Add(zipPath);
+                        string tarPath = compilePath + Guid.NewGuid().ToString().Replace("{", "").Replace("}", "") + "\\";
+
+                        Directory.CreateDirectory(tarPath);
+                        tempDirectories.Add(tarPath);
                         Data.Files.Remove(path);
 
-                        List<string> newFiles = new List<string>();
-                        foreach (ZipEntry entry in zipFile)
-                        {
-                            bool fileAllowed = false;
-                            foreach (string extension in allowedImageExtensions)
-                            {
-                                if (entry.FileName.EndsWith(extension, StringComparison.InvariantCultureIgnoreCase))
-                                {
-                                    fileAllowed = true;
-                                    break;
-                                }
-                            }
+                        tarFile.ExtractContents(tarPath);
 
-                            if (fileAllowed)
-                            {
-                                entry.Extract(zipPath, ExtractExistingFileAction.OverwriteSilently);
-                                newFiles.Add(zipPath + entry.FileName.Replace("/", "\\"));
-                            }
-                        }
+                        List<string> newFiles = new List<string>();
+                        ParseTarExtractedElements(newFiles, new DirectoryInfo(tarPath));
 
                         newFiles = newFiles.OrderBy(f => f, new FileNameComparer()).ToList();
                         foreach (string newFile in newFiles)
@@ -606,14 +622,71 @@ namespace EpubManga
                         }
                     }
                 }
-                catch
+            }
+            catch
+            {
+                zipErrors.Add(path);
+                Data.Files.Remove(path);
+            }
+        }
+
+        private void ParseTarExtractedElements(List<string> files, DirectoryInfo directory)
+        {
+            files.AddRange(directory.GetFiles().Where(f => allowedImageExtensions.Contains(f.Extension.ToLower())).Select(f => f.FullName));
+
+            foreach (DirectoryInfo subDirecdtory in directory.GetDirectories())
+            {
+                ParseTarExtractedElements(files, subDirecdtory);
+            }
+        }
+
+        private void CheckZipArchive(string path)
+        {
+            try
+            {
+                using (ZipFile zipFile = new ZipFile(path))
                 {
-                    zipErrors.Add(path);
+                    int pathIndex = Data.Files.IndexOf(path);
+                    string zipPath = compilePath + Guid.NewGuid().ToString().Replace("{", "").Replace("}", "") + "\\";
+
+                    Directory.CreateDirectory(zipPath);
+                    tempDirectories.Add(zipPath);
+
                     Data.Files.Remove(path);
+
+                    List<string> newFiles = new List<string>();
+                    foreach (ZipEntry entry in zipFile)
+                    {
+                        bool fileAllowed = false;
+                        foreach (string extension in allowedImageExtensions)
+                        {
+                            if (entry.FileName.EndsWith(extension, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                fileAllowed = true;
+                                break;
+                            }
+                        }
+
+                        if (fileAllowed)
+                        {
+                            entry.Extract(zipPath, ExtractExistingFileAction.OverwriteSilently);
+                            newFiles.Add(zipPath + entry.FileName.Replace("/", "\\"));
+                        }
+                    }
+
+                    newFiles = newFiles.OrderBy(f => f, new FileNameComparer()).ToList();
+                    foreach (string newFile in newFiles)
+                    {
+                        Data.Files.Insert(pathIndex, newFile);
+                        pathIndex++;
+                    }
                 }
             }
-
-            TotalImages = Data.Files.Count;
+            catch
+            {
+                zipErrors.Add(path);
+                Data.Files.Remove(path);
+            }
         }
 
         private void ProcessImages()
