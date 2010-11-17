@@ -67,6 +67,14 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="RarLab\EventArgs\DataAvailableEventArgs.cs" />
+    <Compile Include="RarLab\EventArgs\ExtractionProgressEventArgs.cs" />
+    <Compile Include="RarLab\EventArgs\MissingVolumeEventArgs.cs" />
+    <Compile Include="RarLab\EventArgs\NewFileEventArgs.cs" />
+    <Compile Include="RarLab\EventArgs\NewVolumeEventArgs.cs" />
+    <Compile Include="RarLab\EventArgs\PasswordRequiredEventArgs.cs" />
+    <Compile Include="RarLab\RarFileInfo.cs" />
+    <Compile Include="RarLab\Unrar.cs" />
     <Compile Include="SharpZipLib\SharpZipBaseException.cs" />
     <Compile Include="SharpZipLib\Tar\InvalidHeaderException.cs" />
     <Compile Include="SharpZipLib\Tar\TarArchive.cs" />
@@ -133,6 +141,10 @@
     <Resource Include="App.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>cd $(ProjectDir)
+copy /y ..\Libraries\unrar.dll .\bin\$(ConfigurationName)</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
