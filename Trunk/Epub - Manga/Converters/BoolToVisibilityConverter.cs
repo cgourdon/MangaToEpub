@@ -12,7 +12,10 @@ namespace EpubManga
             bool? bl = value as bool?;
             if (!bl.HasValue) return Binding.DoNothing;
 
-            return bl == true ? Visibility.Visible : Visibility.Collapsed;
+            bool hiddenInsteadOfCollapsed = false;
+            Boolean.TryParse(parameter == null ? string.Empty : parameter.ToString(), out hiddenInsteadOfCollapsed);
+
+            return bl == true ? Visibility.Visible : (hiddenInsteadOfCollapsed ? Visibility.Hidden : Visibility.Collapsed);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

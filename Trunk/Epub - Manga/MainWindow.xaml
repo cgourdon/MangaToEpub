@@ -76,14 +76,26 @@
         
         
         <manga:Options Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="4"/>
-        
-        
-        <Button Grid.Row="7" Grid.Column="0" Content="Generate"
-            Command="{Binding GenerateCommand}" />
-        
-        <ProgressBar Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="3" Minimum="0"
-            Maximum="{Binding TotalImages, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-            Value="{Binding TreatedImages, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
+
+
+        <Button Grid.Row="7" Grid.Column="0" Content="Preview"
+            Command="{Binding ShowPreviewCommand}"/>
+
+        <Grid Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="3">
+            
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="85"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" Content="Generate"
+                Command="{Binding GenerateCommand}" />
+
+            <ProgressBar Grid.Column="1" Minimum="0"
+                Maximum="{Binding TotalImages, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                Value="{Binding TreatedImages, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
+
+        </Grid>
 
     </Grid>
     

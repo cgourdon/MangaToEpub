@@ -28,8 +28,6 @@ namespace EpubManga
             Data = userInput;
             Data.PropertyChanged += Data_PropertyChanged;
 
-            DisplayPreviewButton = false;
-
 
             currentImageIndex = 0;
 
@@ -53,26 +51,6 @@ namespace EpubManga
         #region Properties
 
         public UserInput Data { get; private set; }
-
-        #region DisplayPreviewButton
-
-        private bool displayPreviewButton;
-        private static PropertyChangedEventArgs displayPreviewButtonChangedArgs = new PropertyChangedEventArgs("DisplayPreviewButton");
-        public bool DisplayPreviewButton
-        {
-            get
-            {
-                return displayPreviewButton;
-            }
-            set
-            {
-                if (displayPreviewButton == value) return;
-                displayPreviewButton = value;
-                NotifyPropertyChanged(displayPreviewButtonChangedArgs);
-            }
-        }
-
-        #endregion
 
         #region Error
 
@@ -300,7 +278,7 @@ namespace EpubManga
 
                     using (imageToTreat)
                     {
-                        List<Bitmap> images = ImageTreater.GetInstance().HandleDoublePage(imageToTreat, Data.DoublePage);
+                        List<Bitmap> images = ImageTreater.GetInstance().HandleDoublePage(imageToTreat, Data.DoublePage, Data.Offset);
                         if (images.Count == 1)
                         {
                             SetImage1(images[0], stream);
@@ -324,7 +302,7 @@ namespace EpubManga
 
         private void SetImage1(Bitmap bitmap, MemoryStream stream)
         {
-            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(bitmap, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue))
+            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(bitmap, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue, Data.LeftMargin))
             {
                 treatedImage.Save(stream, codec, parameters);
             }
@@ -334,7 +312,7 @@ namespace EpubManga
 
         private void SetImage2(Bitmap bitmap, MemoryStream stream)
         {
-            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(bitmap, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue))
+            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(bitmap, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue, Data.LeftMargin))
             {
                 treatedImage.Save(stream, codec, parameters);
             }

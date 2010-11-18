@@ -5,6 +5,7 @@ namespace EpubManga
     {
         None,
         FileName,
-        Integer
+        Integer,
+        NegativeInteger
     }
 }
