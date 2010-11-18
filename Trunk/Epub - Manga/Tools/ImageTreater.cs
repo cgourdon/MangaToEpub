@@ -56,7 +56,7 @@ namespace EpubManga
 
         #region Image Treatment
 
-        public List<Bitmap> HandleDoublePage(Bitmap image, DoublePage doublePage)
+        public List<Bitmap> HandleDoublePage(Bitmap image, DoublePage doublePage, int offset)
         {
             List<Bitmap> result = new List<Bitmap>();
 
@@ -75,28 +75,36 @@ namespace EpubManga
                 else
                 {
                     int firstStart;
+                    int firstWidth;
                     int secondStart;
+                    int secondWidth;
 
                     switch (doublePage)
                     {
                         case DoublePage.LeftPageFirst:
                             firstStart = 0;
-                            secondStart = image.Width / 2;
+                            firstWidth = image.Width / 2 + offset;
+                            secondStart = image.Width / 2 + offset;
+                            secondWidth = image.Width / 2 - offset;
                             break;
                         case DoublePage.RightPageFirst:
-                            firstStart = image.Width / 2;
+                            firstStart = image.Width / 2 + offset;
+                            firstWidth = image.Width / 2 - offset;
                             secondStart = 0;
+                            secondWidth = image.Width / 2 + offset;
                             break;
                         default:
                             firstStart = 0;
+                            firstWidth = 0;
                             secondStart = 0;
+                            secondWidth = 0;
                             break;
                     }
 
-                    Bitmap image1 = image.Clone(new RectangleF(firstStart, 0, image.Width / 2, image.Height), image.PixelFormat);
+                    Bitmap image1 = image.Clone(new RectangleF(firstStart, 0, firstWidth, image.Height), image.PixelFormat);
                     result.Add(image1);
 
-                    Bitmap image2 = image.Clone(new RectangleF(secondStart, 0, image.Width / 2, image.Height), image.PixelFormat);
+                    Bitmap image2 = image.Clone(new RectangleF(secondStart, 0, secondWidth, image.Height), image.PixelFormat);
                     result.Add(image2);
                 }
             }
@@ -108,7 +116,7 @@ namespace EpubManga
             return result;
         }
 
-        public Bitmap TreatImage(Bitmap originalImage, int height, bool grayscale, bool trimming, int trimmingValue)
+        public Bitmap TreatImage(Bitmap originalImage, int height, bool grayscale, bool trimming, int trimmingValue, double leftMargin)
         {
             int theoreticalWidth = (Int32)Math.Round((double)(height * 0.75), 0, MidpointRounding.AwayFromZero);
 
@@ -123,7 +131,7 @@ namespace EpubManga
                         int width = (Int32)Math.Round((double)(height * trimmedImage.Width / trimmedImage.Height), 0, MidpointRounding.AwayFromZero);
 
                         g.FillRectangle(new SolidBrush(Color.White), 0, 0, theoreticalWidth, height);
-                        g.DrawImage(trimmedImage, (float)((theoreticalWidth - width) * 0.65), 0, width, height);
+                        g.DrawImage(trimmedImage, (float)((theoreticalWidth - width) * leftMargin), 0, width, height);
                     }
                 }
             }

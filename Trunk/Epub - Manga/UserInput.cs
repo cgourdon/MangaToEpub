@@ -42,6 +42,7 @@ namespace EpubManga
                 if (doublePage == value) return;
                 doublePage = value;
                 NotifyPropertyChanged(doublePageChangedArgs);
+                NotifyPropertyChanged(isOffsetVisibleChangedArgs);
             }
         }
 
@@ -102,6 +103,60 @@ namespace EpubManga
                 if (height == value) return;
                 height = value;
                 NotifyPropertyChanged(heightChangedArgs);
+            }
+        }
+
+        #endregion
+
+        #region Is Offset Visible
+
+        private static readonly PropertyChangedEventArgs isOffsetVisibleChangedArgs = new PropertyChangedEventArgs("IsOffsetVisible");
+        public bool IsOffsetVisible
+        {
+            get
+            {
+                return (DoublePage == DoublePage.LeftPageFirst)
+                    || (DoublePage == DoublePage.RightPageFirst);
+            }
+        }
+
+        #endregion
+
+        #region Left Margin
+
+        private double leftMargin;
+        private static readonly PropertyChangedEventArgs leftMarginChangedArgs = new PropertyChangedEventArgs("LeftMargin");
+        public double LeftMargin
+        {
+            get
+            {
+                return leftMargin;
+            }
+            set
+            {
+                if (leftMargin == value) return;
+                leftMargin = value;
+                NotifyPropertyChanged(leftMarginChangedArgs);
+            }
+        }
+
+        #endregion
+
+        #region Offset
+
+        private int offset;
+        private static readonly PropertyChangedEventArgs offsetChangedArgs = new PropertyChangedEventArgs("Offset");
+        public int Offset
+        {
+            get
+            {
+                return offset;
+            }
+            set
+            {
+                if (offset == value) return;
+                offset = value;
+                NotifyPropertyChanged(offsetChangedArgs);
             }
         }
 

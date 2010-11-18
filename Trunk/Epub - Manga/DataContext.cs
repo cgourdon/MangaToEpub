@@ -59,14 +59,13 @@ namespace EpubManga
         public DataContext()
         {
             Data = new UserInput() { Height = 744, OutputFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\",
-                DoublePage = DoublePage.RightPageFirst, Grayscale = true, Trimming = true, TrimmingValue = 220 };
+                DoublePage = DoublePage.RightPageFirst, Grayscale = true, Trimming = true, TrimmingValue = 220, LeftMargin = 0.65, Offset = 0 };
             if (Directory.Exists(Data.OutputFolder + "My Books"))
             {
                 Data.OutputFolder += "My Books\\";
             }
 
 
-            DisplayPreviewButton = true;
             IsBusy = false;
             InitializeCommands();
 
@@ -136,26 +135,6 @@ namespace EpubManga
         #region Properties
 
         public UserInput Data { get; private set; }
-
-        #region DisplayPreviewButton
-
-        private bool displayPreviewButton;
-        private static PropertyChangedEventArgs displayPreviewButtonChangedArgs = new PropertyChangedEventArgs("DisplayPreviewButton");
-        public bool DisplayPreviewButton
-        {
-            get
-            {
-                return displayPreviewButton;
-            }
-            set
-            {
-                if (displayPreviewButton == value) return;
-                displayPreviewButton = value;
-                NotifyPropertyChanged(displayPreviewButtonChangedArgs);
-            }
-        }
-
-        #endregion
 
         #region IsBusy
 
@@ -710,7 +689,7 @@ namespace EpubManga
 
                 using (from)
                 {
-                    List<Bitmap> images = ImageTreater.GetInstance().HandleDoublePage(from, Data.DoublePage);
+                    List<Bitmap> images = ImageTreater.GetInstance().HandleDoublePage(from, Data.DoublePage, Data.Offset);
                     foreach (Bitmap image in images)
                     {
                         SaveImage(image, ref imageIndex, path);
@@ -730,7 +709,7 @@ namespace EpubManga
                 return;
             }
 
-            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(imageOriginal, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue))
+            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(imageOriginal, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue, Data.LeftMargin))
             {
                 treatedImage.Save(imagesFolderPath + "I" + imageIndex.ToString() + ".jpg", codec, parameters);
             }

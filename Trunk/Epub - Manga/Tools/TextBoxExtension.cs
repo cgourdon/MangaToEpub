@@ -48,6 +48,9 @@ namespace EpubManga
                 case Regexp.Integer:
                     pattern = "^[0-9]*$";
                     break;
+                case Regexp.NegativeInteger:
+                    pattern = "^-?[0-9]*$";
+                    break;
                 default:
                     pattern = string.Empty;
                     break;
