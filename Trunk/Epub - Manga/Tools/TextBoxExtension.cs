@@ -24,6 +24,22 @@ namespace EpubManga
             TextBox textBox = d as TextBox;
             if (textBox == null) return;
 
+            switch (GetRegexp(textBox))
+            {
+                case Regexp.FileName:
+                    SetPattern(textBox, "^[^:\\\\/*?<>\"\\|]*$");
+                    break;
+                case Regexp.Integer:
+                    SetPattern(textBox, "^[0-9]*$");
+                    break;
+                case Regexp.NegativeInteger:
+                    SetPattern(textBox, "^-?[0-9]*$");
+                    break;
+                default:
+                    SetPattern(textBox, string.Empty);
+                    break;
+            }
+
             textBox.TextChanged -= textBox_TextChanged;
             textBox.TextChanged += textBox_TextChanged;
 
@@ -37,36 +53,20 @@ namespace EpubManga
             if (textBox == null) return;
             if (string.IsNullOrEmpty(textBox.Text)) return;
 
-            Regexp regexp = GetRegexp(textBox);
-            string pattern;
-
-            switch (regexp)
-            {
-                case Regexp.FileName:
-                    pattern = "^[^:\\\\/*?<>\"\\|]*$";
-                    break;
-                case Regexp.Integer:
-                    pattern = "^[0-9]*$";
-                    break;
-                case Regexp.NegativeInteger:
-                    pattern = "^-?[0-9]*$";
-                    break;
-                default:
-                    pattern = string.Empty;
-                    break;
-            }
-
-            if (Regex.Match(textBox.Text, pattern).Success)
+            if (Regex.Match(textBox.Text, GetPattern(textBox)).Success)
             {
                 SetPreviousText(textBox, textBox.Text);
-                SetPreviousSelectedIndex(textBox, textBox.SelectionStart);
             }
             else
             {
+                int oldSelectionStart = textBox.SelectionStart;
+                int oldTextLength = textBox.Text != null ? textBox.Text.Length : 0;
+
                 textBox.TextChanged -= textBox_TextChanged;
                 textBox.Text = GetPreviousText(textBox);
                 textBox.TextChanged += textBox_TextChanged;
-                textBox.SelectionStart = GetPreviousSelectedIndex(textBox);
+
+                textBox.SelectionStart = oldSelectionStart - (oldTextLength - (textBox.Text != null ? textBox.Text.Length : 0));
             }
         }
 
@@ -96,17 +96,17 @@ namespace EpubManga
 
 
 
-        private static DependencyProperty PreviousSelectedIndexProperty
-            = DependencyProperty.RegisterAttached("PreviousSelectedIndex", typeof(int), typeof(TextBoxExtension));
+        private static DependencyProperty PatternProperty
+            = DependencyProperty.RegisterAttached("Pattern", typeof(string), typeof(TextBoxExtension));
 
-        private static void SetPreviousSelectedIndex(DependencyObject d, int value)
+        private static void SetPattern(DependencyObject d, string value)
         {
-            d.SetValue(PreviousSelectedIndexProperty, value);
+            d.SetValue(PatternProperty, value);
         }
 
-        private static int GetPreviousSelectedIndex(DependencyObject d)
+        private static string GetPattern(DependencyObject d)
         {
-            return (int)d.GetValue(PreviousSelectedIndexProperty);
+            return (string)d.GetValue(PatternProperty);
         }
     }
 }

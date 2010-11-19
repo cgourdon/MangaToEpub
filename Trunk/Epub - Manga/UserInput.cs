@@ -142,6 +142,20 @@ namespace EpubManga
 
         #endregion
 
+        #region Main Window Height
+
+        private static readonly PropertyChangedEventArgs mainWindowHeightChangedArgs = new PropertyChangedEventArgs("MainWindowHeight");
+        public int MainWindowHeight
+        {
+            get
+            {
+                if (Trimming) return 270;
+                else return 245;
+            }
+        }
+
+        #endregion
+
         #region Offset
 
         private int offset;
@@ -237,6 +251,28 @@ namespace EpubManga
                 if (trimming == value) return;
                 trimming = value;
                 NotifyPropertyChanged(trimmingChangedArgs);
+                NotifyPropertyChanged(mainWindowHeightChangedArgs);
+            }
+        }
+
+        #endregion
+
+        #region Trimming Level
+
+        private TrimmingLevel trimmingLevel;
+        private static readonly PropertyChangedEventArgs trimmingLevelChangedArgs = new PropertyChangedEventArgs("TrimmingLevel");
+        public TrimmingLevel TrimmingLevel
+        {
+            get
+            {
+                return trimmingLevel;
+            }
+            set
+            {
+                if (trimmingLevel == value) return;
+                trimmingLevel = value;
+                NotifyPropertyChanged(trimmingLevelChangedArgs);
+                NotifyPropertyChanged(trimmingValueChangedArgs);
             }
         }
 
@@ -244,19 +280,30 @@ namespace EpubManga
 
         #region Trimming Value
 
-        private int trimmingValue;
         private static readonly PropertyChangedEventArgs trimmingValueChangedArgs = new PropertyChangedEventArgs("TrimmingValue");
         public int TrimmingValue
         {
             get
             {
-                return trimmingValue;
-            }
-            set
-            {
-                if (trimmingValue == value) return;
-                trimmingValue = value;
-                NotifyPropertyChanged(trimmingValueChangedArgs);
+                int result;
+
+                switch (TrimmingLevel)
+                {
+                    case TrimmingLevel.High:
+                        result = 200;
+                        break;
+                    case TrimmingLevel.Medium:
+                        result = 220;
+                        break;
+                    case TrimmingLevel.Low:
+                        result = 240;
+                        break;
+                    default:
+                        result = 256;
+                        break;
+                }
+
+                return result;
             }
         }
 

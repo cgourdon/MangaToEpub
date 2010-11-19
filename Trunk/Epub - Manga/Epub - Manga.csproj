@@ -67,6 +67,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Converters\TrimmingLevelToBoolConverter.cs" />
+    <Compile Include="Enumerations\TrimmingLevel.cs" />
     <Compile Include="RarLab\EventArgs\DataAvailableEventArgs.cs" />
     <Compile Include="RarLab\EventArgs\ExtractionProgressEventArgs.cs" />
     <Compile Include="RarLab\EventArgs\MissingVolumeEventArgs.cs" />

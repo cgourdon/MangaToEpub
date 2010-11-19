@@ -59,7 +59,7 @@ namespace EpubManga
         public DataContext()
         {
             Data = new UserInput() { Height = 744, OutputFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\",
-                DoublePage = DoublePage.RightPageFirst, Grayscale = true, Trimming = true, TrimmingValue = 220, LeftMargin = 0.65, Offset = 0 };
+                DoublePage = DoublePage.RightPageFirst, Grayscale = true, Trimming = true, TrimmingLevel = TrimmingLevel.Medium, LeftMargin = 0.65, Offset = 0 };
             if (Directory.Exists(Data.OutputFolder + "My Books"))
             {
                 Data.OutputFolder += "My Books\\";
