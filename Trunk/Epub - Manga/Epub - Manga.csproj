@@ -68,7 +68,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Converters\TrimmingLevelToBoolConverter.cs" />
+    <Compile Include="Converters\TrimmingMethodToBoolConverter.cs" />
     <Compile Include="Enumerations\TrimmingLevel.cs" />
+    <Compile Include="Enumerations\TrimmingMethod.cs" />
     <Compile Include="RarLab\EventArgs\DataAvailableEventArgs.cs" />
     <Compile Include="RarLab\EventArgs\ExtractionProgressEventArgs.cs" />
     <Compile Include="RarLab\EventArgs\MissingVolumeEventArgs.cs" />

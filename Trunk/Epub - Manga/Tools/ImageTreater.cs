@@ -116,7 +116,7 @@ namespace EpubManga
             return result;
         }
 
-        public Bitmap TreatImage(Bitmap originalImage, int height, bool grayscale, bool trimming, int trimmingValue, double leftMargin)
+        public Bitmap TreatImage(Bitmap originalImage, int height, bool grayscale, bool trimming, int trimmingValue, double leftMargin, TrimmingMethod trimmingMethod)
         {
             int theoreticalWidth = (Int32)Math.Round((double)(height * 0.75), 0, MidpointRounding.AwayFromZero);
 
@@ -124,7 +124,7 @@ namespace EpubManga
 
             using (Bitmap grayedImage = GrayImage(originalImage, grayscale))
             {
-                using (Bitmap trimmedImage = TrimImage(grayedImage, trimming, grayscale, trimmingValue))
+                using (Bitmap trimmedImage = TrimImage(grayedImage, trimming, grayscale, trimmingValue, trimmingMethod))
                 {
                     using (Graphics g = Graphics.FromImage((System.Drawing.Image)treatedImage))
                     {
@@ -156,7 +156,7 @@ namespace EpubManga
             }
         }
 
-        private Bitmap TrimImage(Bitmap originalImage, bool trimming, bool isGrayed, int trimmingValue)
+        private Bitmap TrimImage(Bitmap originalImage, bool trimming, bool isGrayed, int trimmingValue, TrimmingMethod trimmingMethod)
         {
             if (trimming)
             {
@@ -167,70 +167,22 @@ namespace EpubManga
                     int endX = -2;
                     int endY = -2;
 
-                    for (int i = 0; i < grayedImage.Width; i++)
+                    switch (trimmingMethod)
                     {
-                        for (int j = 0; j < grayedImage.Height; j++)
-                        {
-                            Color orgColor = grayedImage.GetPixel(i, j);
-                            if ((orgColor.R < trimmingValue) || (orgColor.G < trimmingValue) || (orgColor.B < trimmingValue))
-                            {
-                                startX = i - 1;
-                                break;
-                            }
-                        }
-
-                        if (startX != -2) break;
-                    }
-
-                    for (int j = 0; j < grayedImage.Height; j++)
-                    {
-                        for (int i = 0; i < grayedImage.Width; i++)
-                        {
-                            Color orgColor = grayedImage.GetPixel(i, j);
-                            if ((orgColor.R < trimmingValue) || (orgColor.G < trimmingValue) || (orgColor.B < trimmingValue))
-                            {
-                                startY = j - 1;
-                                break;
-                            }
-                        }
-
-                        if (startY != -2) break;
-                    }
-
-                    for (int i = grayedImage.Width - 1; i >= 0; i--)
-                    {
-                        for (int j = 0; j < grayedImage.Height; j++)
-                        {
-                            Color orgColor = grayedImage.GetPixel(i, j);
-                            if ((orgColor.R < trimmingValue) || (orgColor.G < trimmingValue) || (orgColor.B < trimmingValue))
-                            {
-                                endX = i + 1;
-                                break;
-                            }
-                        }
-
-                        if (endX != -2) break;
-                    }
-
-                    for (int j = grayedImage.Height - 1; j >= 0; j--)
-                    {
-                        for (int i = 0; i < grayedImage.Width; i++)
-                        {
-                            Color orgColor = grayedImage.GetPixel(i, j);
-                            if ((orgColor.R < trimmingValue) || (orgColor.G < trimmingValue) || (orgColor.B < trimmingValue))
-                            {
-                                endY = j + 1;
-                                break;
-                            }
-                        }
-
-                        if (endY != -2) break;
+                        case TrimmingMethod.Absolute:
+                            AbsoluteTrimming(grayedImage, trimmingValue, ref startX, ref startY, ref endX, ref endY);
+                            break;
+                        case TrimmingMethod.Average:
+                            AverageTrimming(grayedImage, trimmingValue, ref startX, ref startY, ref endX, ref endY);
+                            break;
                     }
 
                     if (startX < 0) startX = 0;
                     if (startY < 0) startY = 0;
                     if (endX < 0) endX = 0;
                     if (endY < 0) endY = 0;
+                    if (startX > endX) startX = endX;
+                    if (startY > endY) startY = endY;
 
                     return originalImage.Clone(new RectangleF(startX, startY, endX - startX, endY - startY), originalImage.PixelFormat);
                 }
@@ -238,6 +190,150 @@ namespace EpubManga
             else
             {
                 return originalImage;
+            }
+        }
+
+        private void AbsoluteTrimming(Bitmap grayedImage, int trimmingValue, ref int startX, ref int startY, ref int endX, ref int endY)
+        {
+            for (int i = 0; i < grayedImage.Width; i++)
+            {
+                for (int j = 0; j < grayedImage.Height; j++)
+                {
+                    Color orgColor = grayedImage.GetPixel(i, j);
+                    if ((orgColor.R < trimmingValue) || (orgColor.G < trimmingValue) || (orgColor.B < trimmingValue))
+                    {
+                        startX = i - 1;
+                        break;
+                    }
+                }
+
+                if (startX != -2) break;
+            }
+
+            for (int j = 0; j < grayedImage.Height; j++)
+            {
+                for (int i = 0; i < grayedImage.Width; i++)
+                {
+                    Color orgColor = grayedImage.GetPixel(i, j);
+                    if ((orgColor.R < trimmingValue) || (orgColor.G < trimmingValue) || (orgColor.B < trimmingValue))
+                    {
+                        startY = j - 1;
+                        break;
+                    }
+                }
+
+                if (startY != -2) break;
+            }
+
+            for (int i = grayedImage.Width - 1; i >= 0; i--)
+            {
+                for (int j = 0; j < grayedImage.Height; j++)
+                {
+                    Color orgColor = grayedImage.GetPixel(i, j);
+                    if ((orgColor.R < trimmingValue) || (orgColor.G < trimmingValue) || (orgColor.B < trimmingValue))
+                    {
+                        endX = i + 1;
+                        break;
+                    }
+                }
+
+                if (endX != -2) break;
+            }
+
+            for (int j = grayedImage.Height - 1; j >= 0; j--)
+            {
+                for (int i = 0; i < grayedImage.Width; i++)
+                {
+                    Color orgColor = grayedImage.GetPixel(i, j);
+                    if ((orgColor.R < trimmingValue) || (orgColor.G < trimmingValue) || (orgColor.B < trimmingValue))
+                    {
+                        endY = j + 1;
+                        break;
+                    }
+                }
+
+                if (endY != -2) break;
+            }
+        }
+
+        private void AverageTrimming(Bitmap grayedImage, int trimmingValue, ref int startX, ref int startY, ref int endX, ref int endY)
+        {
+            int localTrimmingValue = trimmingValue + (Int32)Math.Round(((256 - trimmingValue) * 0.5), MidpointRounding.AwayFromZero);
+
+            for (int i = 0; i < grayedImage.Width; i++)
+            {
+                int sum = 0;
+
+                for (int j = 0; j < grayedImage.Height; j++)
+                {
+                    Color orgColor = grayedImage.GetPixel(i, j);
+                    sum += orgColor.R;
+                    sum += orgColor.G;
+                    sum += orgColor.B;
+                }
+
+                if (sum / 3 / grayedImage.Height < localTrimmingValue)
+                {
+                    startX = i - 1;
+                    break;
+                }
+            }
+
+            for (int j = 0; j < grayedImage.Height; j++)
+            {
+                int sum = 0;
+
+                for (int i = 0; i < grayedImage.Width; i++)
+                {
+                    Color orgColor = grayedImage.GetPixel(i, j);
+                    sum += orgColor.R;
+                    sum += orgColor.G;
+                    sum += orgColor.B;
+                }
+
+                if (sum / 3 / grayedImage.Width < localTrimmingValue)
+                {
+                    startY = j - 1;
+                    break;
+                }
+            }
+
+            for (int i = grayedImage.Width - 1; i >= 0; i--)
+            {
+                int sum = 0;
+
+                for (int j = 0; j < grayedImage.Height; j++)
+                {
+                    Color orgColor = grayedImage.GetPixel(i, j);
+                    sum += orgColor.R;
+                    sum += orgColor.G;
+                    sum += orgColor.B;
+                }
+
+                if (sum / 3 / grayedImage.Height < localTrimmingValue)
+                {
+                    endX = i + 1;
+                    break;
+                }
+            }
+
+            for (int j = grayedImage.Height - 1; j >= 0; j--)
+            {
+                int sum = 0;
+
+                for (int i = 0; i < grayedImage.Width; i++)
+                {
+                    Color orgColor = grayedImage.GetPixel(i, j);
+                    sum += orgColor.R;
+                    sum += orgColor.G;
+                    sum += orgColor.B;
+                }
+
+                if (sum / 3 / grayedImage.Width < localTrimmingValue)
+                {
+                    endY = j + 1;
+                    break;
+                }
             }
         }
 

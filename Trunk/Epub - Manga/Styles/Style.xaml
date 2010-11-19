@@ -7,6 +7,7 @@
     <manga:DoublePageToBoolConverter x:Key="DoublePageToBoolConv"/>
     <manga:ListStringToStringConverter x:Key="ListStringToStringConv"/>
     <manga:TrimmingLevelToBoolConverter x:Key="TrimmingLevelToBoolConv"/>
+    <manga:TrimmingMethodToBoolConverter x:Key="TrimmingMethodToBoolConv"/>
 
     <Style BasedOn="{StaticResource {x:Type TextBox}}" TargetType="{x:Type TextBox}">
         <Setter Property="Margin" Value="2"/>

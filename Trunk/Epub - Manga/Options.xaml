@@ -73,9 +73,30 @@
                 IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                 IsChecked="{Binding Data.TrimmingLevel, Converter={StaticResource TrimmingLevelToBoolConv}, ConverterParameter=High, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                 Visibility="{Binding Data.Trimming, Converter={StaticResource BoolToVisibilityConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
+
+        </Grid>
+
+        <TextBlock Grid.Row="1" Grid.Column="4" Text="Trim. Method"
+            Visibility="{Binding Data.Trimming, Converter={StaticResource BoolToVisibilityConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"/>
+        <Grid Grid.Row="1" Grid.Column="5" Grid.ColumnSpan="3">
+            
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <RadioButton Grid.Column="0" GroupName="TrimmingMethod" Content="Absolute"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                IsChecked="{Binding Data.TrimmingMethod, Converter={StaticResource TrimmingMethodToBoolConv}, ConverterParameter=Absolute, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                Visibility="{Binding Data.Trimming, Converter={StaticResource BoolToVisibilityConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
+
+            <RadioButton Grid.Column="1" GroupName="TrimmingMethod" Content="Average"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                IsChecked="{Binding Data.TrimmingMethod, Converter={StaticResource TrimmingMethodToBoolConv}, ConverterParameter=Average, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                Visibility="{Binding Data.Trimming, Converter={StaticResource BoolToVisibilityConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
             
         </Grid>
-        
+
 
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Double Page"/>
         <Grid Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="5">
