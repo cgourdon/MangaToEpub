@@ -48,6 +48,34 @@
             IsReadOnly="{Binding IsBusy, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
             Text="{Binding Data.LeftMargin, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
         
+        
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Trim. Level"
+            Visibility="{Binding Data.Trimming, Converter={StaticResource BoolToVisibilityConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"/>
+        <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3">
+            
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <RadioButton Grid.Column="0" GroupName="TrimmingLevel" Content="Low"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                IsChecked="{Binding Data.TrimmingLevel, Converter={StaticResource TrimmingLevelToBoolConv}, ConverterParameter=Low, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                Visibility="{Binding Data.Trimming, Converter={StaticResource BoolToVisibilityConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
+
+            <RadioButton Grid.Column="1" GroupName="TrimmingLevel" Content="Medium"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                IsChecked="{Binding Data.TrimmingLevel, Converter={StaticResource TrimmingLevelToBoolConv}, ConverterParameter=Medium, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                Visibility="{Binding Data.Trimming, Converter={StaticResource BoolToVisibilityConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
+
+            <RadioButton Grid.Column="2" GroupName="TrimmingLevel" Content="High"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInverterConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                IsChecked="{Binding Data.TrimmingLevel, Converter={StaticResource TrimmingLevelToBoolConv}, ConverterParameter=High, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                Visibility="{Binding Data.Trimming, Converter={StaticResource BoolToVisibilityConv}, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" />
+            
+        </Grid>
+        
 
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Double Page"/>
         <Grid Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="5">
