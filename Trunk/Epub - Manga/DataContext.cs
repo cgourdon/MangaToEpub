@@ -58,7 +58,7 @@ namespace EpubManga
 
         public DataContext()
         {
-            Data = new UserInput() { Height = 744, OutputFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\",
+            Data = new UserInput() { Height = 744, OutputFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\", TrimmingMethod = TrimmingMethod.Absolute,
                 DoublePage = DoublePage.RightPageFirst, Grayscale = true, Trimming = true, TrimmingLevel = TrimmingLevel.Medium, LeftMargin = 0.65, Offset = 0 };
             if (Directory.Exists(Data.OutputFolder + "My Books"))
             {
@@ -709,7 +709,7 @@ namespace EpubManga
                 return;
             }
 
-            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(imageOriginal, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue, Data.LeftMargin))
+            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(imageOriginal, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue, Data.LeftMargin, Data.TrimmingMethod))
             {
                 treatedImage.Save(imagesFolderPath + "I" + imageIndex.ToString() + ".jpg", codec, parameters);
             }

@@ -302,7 +302,7 @@ namespace EpubManga
 
         private void SetImage1(Bitmap bitmap, MemoryStream stream)
         {
-            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(bitmap, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue, Data.LeftMargin))
+            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(bitmap, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue, Data.LeftMargin, Data.TrimmingMethod))
             {
                 treatedImage.Save(stream, codec, parameters);
             }
@@ -312,7 +312,7 @@ namespace EpubManga
 
         private void SetImage2(Bitmap bitmap, MemoryStream stream)
         {
-            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(bitmap, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue, Data.LeftMargin))
+            using (Bitmap treatedImage = ImageTreater.GetInstance().TreatImage(bitmap, Data.Height, Data.Grayscale, Data.Trimming, Data.TrimmingValue, Data.LeftMargin, Data.TrimmingMethod))
             {
                 treatedImage.Save(stream, codec, parameters);
             }

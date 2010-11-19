@@ -278,6 +278,26 @@ namespace EpubManga
 
         #endregion
 
+        #region Trimming Method
+
+        private TrimmingMethod trimmingMethod;
+        private static readonly PropertyChangedEventArgs trimmingMethodChangedArgs = new PropertyChangedEventArgs("TrimmingMethod");
+        public TrimmingMethod TrimmingMethod
+        {
+            get
+            {
+                return trimmingMethod;
+            }
+            set
+            {
+                if (trimmingMethod == value) return;
+                trimmingMethod = value;
+                NotifyPropertyChanged(trimmingMethodChangedArgs);
+            }
+        }
+
+        #endregion
+
         #region Trimming Value
 
         private static readonly PropertyChangedEventArgs trimmingValueChangedArgs = new PropertyChangedEventArgs("TrimmingValue");
