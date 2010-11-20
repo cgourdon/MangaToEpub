@@ -4,6 +4,9 @@ using System.Runtime.InteropServices;
 
 namespace EpubManga
 {
+    /// <summary>
+    /// String comparer based on the windows file name comparer.
+    /// </summary>
     public class FileNameComparer : IComparer<string>
     {
         [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]

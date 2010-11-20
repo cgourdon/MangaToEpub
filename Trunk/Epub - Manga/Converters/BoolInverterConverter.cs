@@ -4,6 +4,9 @@ using System.Windows.Data;
 
 namespace EpubManga
 {
+    /// <summary>
+    /// Returns the inverted value of the given boolean.
+    /// </summary>
     public class BoolInverterConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

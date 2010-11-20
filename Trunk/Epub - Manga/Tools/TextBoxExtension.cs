@@ -4,6 +4,9 @@ using System.Windows.Controls;
 
 namespace EpubManga
 {
+    /// <summary>
+    /// Extends TextBox framework element by adding a "Regexp" property, allowing to set a specific mask on the textbox text.
+    /// </summary>
     public static class TextBoxExtension
     {
         public static DependencyProperty RegexpProperty

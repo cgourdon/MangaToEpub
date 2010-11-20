@@ -5,11 +5,19 @@ using System.Drawing.Imaging;
 
 namespace EpubManga
 {
+    /// <summary>
+    /// Treat given images, mainly grayscaling and trimming.
+    /// </summary>
     public class ImageTreater
     {
         #region Singleton
 
         private static ImageTreater instance;
+
+        /// <summary>
+        /// Returns the single instance of the ImageTreater class.
+        /// </summary>
+        /// <returns>A single instance of the ImageTreater class.</returns>
         public static ImageTreater GetInstance()
         {
             lock (typeof(ImageTreater))
@@ -38,6 +46,9 @@ namespace EpubManga
 
         #region Initialize
 
+        /// <summary>
+        /// Initialize the color matrix needed to gray an image.
+        /// </summary>
         private void Initialize()
         {
             imageAttributes = new ImageAttributes();
@@ -56,6 +67,16 @@ namespace EpubManga
 
         #region Image Treatment
 
+        /// <summary>
+        /// Returns 1 or 2 images depending on the given DoublePage value.
+        /// If DoublePage is RotateLeft or RotateRigh, it will perform the necessary rotation and returns a list containing only the rotated image.
+        /// Otherwise, 2 images will be returned, Offset allowing to specify if one of them need to be larger than the other one.
+        /// Of Offsset is positive, the left part of the image will be larger, the right part otherwise.
+        /// </summary>
+        /// <param name="image">The image that need to be treated.</param>
+        /// <param name="doublePage">The type of DoublePage treatment requested.</param>
+        /// <param name="offset">Specifies if the left page (positive value) or right page (negative value) must be larger than the other one.</param>
+        /// <returns>A list of 1 or 2 images depending on the given DoublePage value.</returns>
         public List<Bitmap> HandleDoublePage(Bitmap image, DoublePage doublePage, int offset)
         {
             List<Bitmap> result = new List<Bitmap>();
@@ -116,6 +137,17 @@ namespace EpubManga
             return result;
         }
 
+        /// <summary>
+        /// Perform the full treatment on an image, that is graying, trimming and resizing, and returns the result.
+        /// </summary>
+        /// <param name="originalImage">The image that need to be treated.</param>
+        /// <param name="height">The height of the treated image.</param>
+        /// <param name="grayscale">Does the image need to be grayed.</param>
+        /// <param name="trimming">Does the image need to be trimmed.</param>
+        /// <param name="trimmingValue">Between 0 and 255, the closer to 0, the more will be trimmed.</param>
+        /// <param name="leftMargin">Between 0 and 1, the width of the left margin, 0.5 in order to have the left and right margin equals.</param>
+        /// <param name="trimmingMethod">The trimming method to be used.</param>
+        /// <returns>An image grayed, trimmed and resized according to the given parameters.</returns>
         public Bitmap TreatImage(Bitmap originalImage, int height, bool grayscale, bool trimming, int trimmingValue, double leftMargin, TrimmingMethod trimmingMethod)
         {
             int theoreticalWidth = (Int32)Math.Round((double)(height * 0.75), 0, MidpointRounding.AwayFromZero);
@@ -139,6 +171,12 @@ namespace EpubManga
             return treatedImage;
         }
 
+        /// <summary>
+        /// Returns a grayed image if Grayscale is true, the original image otherwise.
+        /// </summary>
+        /// <param name="originalImage">The image that need to be grayed.</param>
+        /// <param name="grayscale">Does the image need to be grayed.</param>
+        /// <returns>A grayed image if Grayscale is true, the original image otherwise.</returns>
         private Bitmap GrayImage(Bitmap originalImage, bool grayscale)
         {
             if (grayscale)
@@ -156,6 +194,15 @@ namespace EpubManga
             }
         }
 
+        /// <summary>
+        /// Returns a trimmed image according to the given parameters if Trimming is true, the original image otherwise.
+        /// </summary>
+        /// <param name="originalImage">The image that need to be trimmed.</param>
+        /// <param name="trimming">Does the image need to be trimmed.</param>
+        /// <param name="isGrayed">Is the image grayed ?</param>
+        /// <param name="trimmingValue">Between 0 and 255, the closer to 0, the more will be trimmed.</param>
+        /// <param name="trimmingMethod">The trimming method to be used.</param>
+        /// <returns>A trimmed image according to the given parameters if Trimming is true, the original image otherwise.</returns>
         private Bitmap TrimImage(Bitmap originalImage, bool trimming, bool isGrayed, int trimmingValue, TrimmingMethod trimmingMethod)
         {
             if (trimming)
@@ -193,6 +240,13 @@ namespace EpubManga
             }
         }
 
+        /// <summary>
+        /// Calculate the rectangle that must be kept on the given image in the case of an Absolute trimming.
+        /// The Absolute trimming will stop looking at the first pixel whose color is below the trimming value.
+        /// Thus making an isolated black pixel stoping the trimming but with no risk of erasing useful part of the image.
+        /// </summary>
+        /// <param name="grayedImage">The image that need to be trimmed according to the absolute method.</param>
+        /// <param name="trimmingValue">Between 0 and 255, the closer to 0, the more will be trimmed.</param>
         private void AbsoluteTrimming(Bitmap grayedImage, int trimmingValue, ref int startX, ref int startY, ref int endX, ref int endY)
         {
             for (int i = 0; i < grayedImage.Width; i++)
@@ -256,6 +310,14 @@ namespace EpubManga
             }
         }
 
+        /// <summary>
+        /// Calculate the rectangle that must be kept on the given image in the case of an Average trimming.
+        /// The Average trimming will perform an average of the color encountered on a given line or column of pixel.
+        /// If this average is lower than TrimmingValue, the trimming will stop.
+        /// This method allow to bypass any isolated black pixel that should not have been here but is very agressive and might cause the loss of useful part of the image.
+        /// </summary>
+        /// <param name="grayedImage">The image that need to be trimmed according to the Average method.</param>
+        /// <param name="trimmingValue">Between 0 and 255, the closer to 0, the more will be trimmed.</param>
         private void AverageTrimming(Bitmap grayedImage, int trimmingValue, ref int startX, ref int startY, ref int endX, ref int endY)
         {
             int localTrimmingValue = trimmingValue + (Int32)Math.Round(((256 - trimmingValue) * 0.5), MidpointRounding.AwayFromZero);

@@ -4,6 +4,9 @@ using System.Windows.Data;
 
 namespace EpubManga
 {
+    /// <summary>
+    /// Converts a TrimmingLevel enumeration to a boolean.
+    /// </summary>
     public class TrimmingLevelToBoolConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

@@ -6,6 +6,9 @@ using System.Windows.Data;
 
 namespace EpubManga
 {
+    /// <summary>
+    /// Converts a list of string to a single string, each element separated by a dash.
+    /// </summary>
     public class ListStringToStringConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

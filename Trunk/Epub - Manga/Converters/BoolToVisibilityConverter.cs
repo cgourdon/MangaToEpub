@@ -5,6 +5,10 @@ using System.Windows.Data;
 
 namespace EpubManga
 {
+    /// <summary>
+    /// Returns Visible if True is given.
+    /// If the parameter is empty or False, it returns Collapsed if bound to a False boolean, Hidden if the parameter is True.
+    /// </summary>
     public class BoolToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
