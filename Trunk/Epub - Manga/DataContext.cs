@@ -14,6 +14,9 @@ using RarLab;
 
 namespace EpubManga
 {
+    /// <summary>
+    /// Main entry point of the application, allow the user to customize its epub file and gives access to the preview.
+    /// </summary>
     public class DataContext : INotifyPropertyChanged
     {
         #region Data
@@ -200,10 +203,32 @@ namespace EpubManga
 
         #region Commands
 
+        /// <summary>
+        /// Generate the epub file according to the options selected by the user.
+        /// </summary>
         public Command GenerateCommand { get; private set; }
+
+        /// <summary>
+        /// Open a select files window where the user can choose files amongst the allowed format.
+        /// </summary>
         public Command SelectFilesCommand { get; private set; }
+
+        /// <summary>
+        /// Open a select folder window allowing to choose an input folder.
+        /// Only the allowed format will be selected.
+        /// The selection is recursive and will browse any subfolder.
+        /// The selection will be sorted using the same mean as Windows Explorer File Name sorter.
+        /// </summary>
         public Command SelectInputFolderCommand { get; private set; }
+        
+        /// <summary>
+        /// Open a select folder window allowing to choose the output folder for the epub file.
+        /// </summary>
         public Command SelectOutputFolderCommand { get; private set; }
+
+        /// <summary>
+        /// Open the preview window.
+        /// </summary>
         public Command ShowPreviewCommand { get; private set; }
 
         private void InitializeCommands()
@@ -390,6 +415,9 @@ namespace EpubManga
 
         #region Generate
 
+        /// <summary>
+        /// Handles the whole generation process.
+        /// </summary>
         private void worker_DoWork(object sender, DoWorkEventArgs e)
         {
             InitializeWorkspace();
@@ -404,6 +432,9 @@ namespace EpubManga
 
         #region Initialization
 
+        /// <summary>
+        /// Initialize the usefull variables for the generation and some of the needed files and folders.
+        /// </summary>
         private void InitializeWorkspace()
         {
             compilePath = Data.OutputFolder + Guid.NewGuid().ToString().Replace("{", "").Replace("}", "") + "\\";
@@ -439,6 +470,9 @@ namespace EpubManga
             writer.Close();
         }
 
+        /// <summary>
+        /// Initialize the string builders for the main files.
+        /// </summary>
         private void InitializeBuilders()
         {
             builderContent1 = new StringBuilder();
@@ -509,6 +543,10 @@ namespace EpubManga
 
         #region File Checking
 
+        /// <summary>
+        /// Check that each of the selected files exists.
+        /// If a given file is one of the allowed archives, it will attempt to unpack it.
+        /// </summary>
         private void CheckSelectedFiles()
         {
             List<string> paths = new List<string>(Data.Files);
@@ -540,6 +578,11 @@ namespace EpubManga
             TotalImages = Data.Files.Count;
         }
 
+        /// <summary>
+        /// Attempts to unrar a rar archive and to copy its content into a folder.
+        /// If it succeeds, the resulting images are added to the files to be added into the generation.
+        /// </summary>
+        /// <param name="path">Path of the rar archive to be checked.</param>
         private void CheckRarArchive(string path)
         {
             try
@@ -570,6 +613,11 @@ namespace EpubManga
             }
         }
 
+        /// <summary>
+        /// Attempts to untar a tar archive and to copy its content into a folder.
+        /// If it succeeds, the resulting images are added to the files to be added into the generation.
+        /// </summary>
+        /// <param name="path">Path of the tar archive to be checked.</param>
         private void CheckTarArchive(string path)
         {
             try
@@ -597,6 +645,11 @@ namespace EpubManga
             }
         }
 
+        /// <summary>
+        /// Attempts to unzip a zip archive and to copy its content into a folder.
+        /// If it succeeds, the resulting images are added to the files to be added into the generation.
+        /// </summary>
+        /// <param name="path">Path of the zip archive to be checked.</param>
         private void CheckZipArchive(string path)
         {
             try
@@ -636,6 +689,11 @@ namespace EpubManga
             }
         }
 
+        /// <summary>
+        /// Returns a path where to copy the result of the unpacking of an archive.
+        /// </summary>
+        /// <param name="path">Path of the given archive.</param>
+        /// <returns>A path where to copy the result of the unpacking of an archive.</returns>
         private string GenerateArchivePath(string path)
         {
             string newPath = compilePath + Guid.NewGuid().ToString().Replace("{", "").Replace("}", "") + "\\";
@@ -647,6 +705,12 @@ namespace EpubManga
             return newPath;
         }
 
+        /// <summary>
+        /// Add each of the extracted elements to a list of paths if the element in one of the allowed image format.
+        /// This function will browse recursively through each folder.
+        /// </summary>
+        /// <param name="files">List of image file paths.</param>
+        /// <param name="directory">Directory to be browsed.</param>
         private void ParseExtractedElements(List<string> files, DirectoryInfo directory)
         {
             files.AddRange(directory.GetFiles().Where(f => allowedImageExtensions.Contains(f.Extension.ToLower())).Select(f => f.FullName));
@@ -657,6 +721,11 @@ namespace EpubManga
             }
         }
 
+        /// <summary>
+        /// Inserts the result of the unpacking of an archive into the list of files to be transformed into an epub.
+        /// </summary>
+        /// <param name="index">Index at which the images must be added.</param>
+        /// <param name="files">Paths to be added.</param>
         private void InsertArchiveFiles(int index, List<string> files)
         {
             files = files.OrderBy(f => f, new FileNameComparer()).ToList();
@@ -671,6 +740,10 @@ namespace EpubManga
 
         #region Image Processing
 
+        /// <summary>
+        /// Attempts to read the image files and checks if they are Double Pages.
+        /// Sends each of the resulting images for treatment.
+        /// </summary>
         private void ProcessImages()
         {
             int imageIndex = 1;
@@ -701,6 +774,14 @@ namespace EpubManga
             }
         }
 
+        /// <summary>
+        /// Treats the given image and saves the result.
+        /// Creates the chapter file needed for the epub related to the image.
+        /// If the image width / height ratio is over 0.75, it will not be treated.
+        /// </summary>
+        /// <param name="imageOriginal">Image to be treated.</param>
+        /// <param name="imageIndex">Index of the current image in the list of treated images.</param>
+        /// <param name="imagePath">Path of the image to treat.</param>
         private void SaveImage(Bitmap imageOriginal, ref int imageIndex, string imagePath)
         {
             if (imageOriginal.Width / imageOriginal.Height > 0.75)
@@ -734,6 +815,12 @@ namespace EpubManga
 
         #region Finalization
 
+        /// <summary>
+        /// Finishes writing various files for the epub.
+        /// Deletes directories where archives were unpacked.
+        /// Transform the files and directories resulting the generation into an epub file.
+        /// Delete any remaining temporary files and directories.
+        /// </summary>
         private void Cleanup()
         {
             string toWrite;
@@ -765,6 +852,9 @@ namespace EpubManga
             Directory.Delete(compilePath, true);
         }
 
+        /// <summary>
+        /// Once the treatmend is finished, displays any errors that may have occured.
+        /// </summary>
         private void worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             IsBusy = false;

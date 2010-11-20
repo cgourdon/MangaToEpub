@@ -9,6 +9,10 @@ using System.Windows.Media.Imaging;
 
 namespace EpubManga
 {
+    /// <summary>
+    /// Gives a preview of the images as they will appear in the epub file.
+    /// It allows to continue tuning the options to have the desired result.
+    /// </summary>
     public class Preview : INotifyPropertyChanged, IDisposable
     {
         #region Data
@@ -156,9 +160,24 @@ namespace EpubManga
 
         #region Commands
 
+        /// <summary>
+        /// Displays the first element of the selected images.
+        /// </summary>
         public Command FirstCommand { get; private set; }
+
+        /// <summary>
+        /// Displays the previous element of the selected images.
+        /// </summary>
         public Command PreviousCommand { get; private set; }
+
+        /// <summary>
+        /// Displays the next element of the selected images.
+        /// </summary>
         public Command NextCommand { get; private set; }
+
+        /// <summary>
+        /// Displays the last element of the selected images.
+        /// </summary>
         public Command LastCommand { get; private set; }
 
         private void InitializeCommands()
@@ -253,6 +272,9 @@ namespace EpubManga
 
         #region Functions
 
+        /// <summary>
+        /// Displays the selected image as it will appear in the epub file.
+        /// </summary>
         private void TreatImage()
         {
             ImagePath = Data.Files[currentImageIndex];
