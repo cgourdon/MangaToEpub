@@ -1,10 +1,65 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace EpubManga
 {
     public class UserInput : INotifyPropertyChanged
     {
+        #region Picklists Data
+
+        private List<string> availableDoublePages;
+        public List<string> AvailableDoublePages
+        {
+            get
+            {
+                if (availableDoublePages == null)
+                {
+                    availableDoublePages = new List<string>(Enum.GetNames(typeof(DoublePage)));
+                    for (int s = 0; s < availableDoublePages.Count; s++)
+                    {
+                        for (int i = 1; i < availableDoublePages[s].Length; i++)
+                        {
+                            if (Char.IsUpper(availableDoublePages[s][i]))
+                            {
+                                availableDoublePages[s] = availableDoublePages[s].Insert(i, " ");
+                                i++;
+                            }
+                        }
+                    }
+                }
+                return availableDoublePages;
+            }
+        }
+
+        private List<string> availableTrimmingLevels;
+        public List<string> AvailableTrimmingLevels
+        {
+            get
+            {
+                if (availableTrimmingLevels == null)
+                {
+                    availableTrimmingLevels = new List<string>(Enum.GetNames(typeof(TrimmingLevel)));
+                }
+                return availableTrimmingLevels;
+            }
+        }
+
+        private List<string> availableTrimmingMethods;
+        public List<string> AvailableTrimmingMethods
+        {
+            get
+            {
+                if (availableTrimmingMethods == null)
+                {
+                    availableTrimmingMethods = new List<string>(Enum.GetNames(typeof(TrimmingMethod)));
+                }
+                return availableTrimmingMethods;
+            }
+        }
+
+        #endregion
+
         #region Properties
 
         #region Author
@@ -142,20 +197,6 @@ namespace EpubManga
 
         #endregion
 
-        #region Main Window Height
-
-        private static readonly PropertyChangedEventArgs mainWindowHeightChangedArgs = new PropertyChangedEventArgs("MainWindowHeight");
-        public int MainWindowHeight
-        {
-            get
-            {
-                if (Trimming) return 270;
-                else return 245;
-            }
-        }
-
-        #endregion
-
         #region Offset
 
         private int offset;
@@ -251,7 +292,6 @@ namespace EpubManga
                 if (trimming == value) return;
                 trimming = value;
                 NotifyPropertyChanged(trimmingChangedArgs);
-                NotifyPropertyChanged(mainWindowHeightChangedArgs);
             }
         }
 

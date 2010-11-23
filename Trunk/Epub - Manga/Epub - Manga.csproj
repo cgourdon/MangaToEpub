@@ -67,8 +67,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Converters\TrimmingLevelToBoolConverter.cs" />
-    <Compile Include="Converters\TrimmingMethodToBoolConverter.cs" />
+    <Compile Include="Converters\TrimmingLevelToStringConverter.cs" />
+    <Compile Include="Converters\TrimmingMethodToStringConverter.cs" />
     <Compile Include="Enumerations\TrimmingLevel.cs" />
     <Compile Include="Enumerations\TrimmingMethod.cs" />
     <Compile Include="RarLab\EventArgs\DataAvailableEventArgs.cs" />
@@ -94,7 +94,7 @@
     <Compile Include="Converters\BoolToVisibilityConverter.cs" />
     <Compile Include="DataContext.cs" />
     <Compile Include="Enumerations\DoublePage.cs" />
-    <Compile Include="Converters\DoublePageToBoolConverter.cs" />
+    <Compile Include="Converters\DoublePageToStringConverter.cs" />
     <Compile Include="Converters\ListStringToStringConverter.cs" />
     <Compile Include="Enumerations\Regexp.cs" />
     <Compile Include="Tools\FileNameComparer.cs" />
