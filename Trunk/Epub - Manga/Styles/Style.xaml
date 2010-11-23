@@ -4,14 +4,18 @@
 
     <manga:BoolInverterConverter x:Key="BoolInverterConv"/>
     <manga:BoolToVisibilityConverter x:Key="BoolToVisibilityConv"/>
-    <manga:DoublePageToBoolConverter x:Key="DoublePageToBoolConv"/>
+    <manga:DoublePageToStringConverter x:Key="DoublePageToStringConv"/>
     <manga:ListStringToStringConverter x:Key="ListStringToStringConv"/>
-    <manga:TrimmingLevelToBoolConverter x:Key="TrimmingLevelToBoolConv"/>
-    <manga:TrimmingMethodToBoolConverter x:Key="TrimmingMethodToBoolConv"/>
+    <manga:TrimmingLevelToStringConverter x:Key="TrimmingLevelToStringConv"/>
+    <manga:TrimmingMethodToStringConverter x:Key="TrimmingMethodToStringConv"/>
 
     <Style BasedOn="{StaticResource {x:Type TextBox}}" TargetType="{x:Type TextBox}">
         <Setter Property="Margin" Value="2"/>
         <Setter Property="Padding" Value="2"/>
+    </Style>
+
+    <Style BasedOn="{StaticResource {x:Type ComboBox}}" TargetType="{x:Type ComboBox}">
+        <Setter Property="Margin" Value="2"/>
     </Style>
 
     <Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
